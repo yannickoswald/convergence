@@ -181,3 +181,5 @@ __pycache__/
 *.docx
 
 data/wid_all_data/
+data/pip_all_data/
+other organizational/
