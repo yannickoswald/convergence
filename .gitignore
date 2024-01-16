@@ -183,3 +183,4 @@ __pycache__/
 data/wid_all_data/
 other organizational/
 old/
+.vscode/
