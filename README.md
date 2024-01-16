@@ -1,2 +1,2 @@
-# global_convergence_of_incomes_in_a_climate-constrained_world
+# Global convergence of incomes in a climate-constrained world
  
