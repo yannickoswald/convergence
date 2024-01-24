@@ -38,7 +38,7 @@ class Scenario():
         Parameters:
                 None
         """
-        with open(os.path.join('data', 'country_data_dummy.csv')) as f:
+        with open(os.path.join('data', 'data_nowcasted_extended.csv')) as f:
             data = pd.read_csv(f, encoding='unicode_escape')
         return data
 

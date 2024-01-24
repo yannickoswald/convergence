@@ -29,8 +29,12 @@ class Country():
                 self.id = None
                 self.name = None
                 self.year = None
-                self.income = None ### average gdp per capita
                 self.scenario = scenario ### assign the current scenario to each country object
+                self.mean_hh_income = None
+                self.median_hh_income = None
+                self.gini_hh_income = None
+                self.gdp_pc_ppp = None
+                self.
 
                 ## set the above attributes, and all other attributes, dynamically
                 for key, value in kwargs.items():
