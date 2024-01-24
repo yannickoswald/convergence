@@ -38,23 +38,39 @@ class Scenario():
         Parameters:
                 None
         """
-        with open(os.path.join('data', 'data_nowcasted_extended.csv')) as f:
+        with open(os.path.join('data\pip_all_data', 'data_nowcasted_extended.csv')) as f:
             data = pd.read_csv(f, encoding='unicode_escape')
         return data
 
-    def initialize_countries(self):   
+    def initialize_countries(self):
+            
+            """
+            Description: 
+                    Initializes countries from raw data. 
+                    It loops over the list of countries identified by country_code or country_name 
+                    and sets the attributes dynamically. This is more flexible if the attributes 
+                    are not preset. Each column in the dataframe, except for country_code and 
+                    country_name, becomes an attribute of the Country instance prefixed with 
+                    'country_'. 
+
+            Parameters:
+                None
+            """
+            countries = {}
+            # Assuming 'country_code' or 'country_name' column is present in the raw data to identify countries
+            for country_identifier in self.raw_data['country_code'].unique():
+                country_data = self.raw_data[self.raw_data['country_code'] == country_identifier].iloc[0]
+                attributes = country_data.to_dict()
+                country_name_or_code = attributes.pop('country_name', attributes.get('country_code'))
+                countries[country_name_or_code] = Country(self, **attributes)
+
+            return countries
+    
+    def compute_country_params(self):
         """
         Description: 
-                Initializes countries from raw data. 
-                It loops of the list of all given countries and sets the attributes
-                dynamically. This is more flexible if all attributes are preset. So 
-                there is a **kwargs argument in the Country class. 
-
+                Compute country parameters based on scenario parameters.
         Parameters:
-            None
+                None
         """
-        countries = list()
-        for i in range(len(self.raw_data)):
-            attributes = self.raw_data.iloc[i].to_dict()
-            countries.append(Country(self, **attributes)) ## **necessary to unpack attributes
-        return countries
+       
