@@ -73,4 +73,21 @@ class Scenario():
         Parameters:
                 None
         """
+
+        start_year = 2023  # Assuming the scenario starts in 2023
+        years_to_end = self.end_year - start_year
+
+        for country in self.countries.values():
+            # Compute the CAGR for each decile
+            for decile_num in range(1, 11):
+                decile_income = getattr(country, f'decile{decile_num}_abs')
+
+                # Compute CAGR
+                if decile_income > 0 and years_to_end > 0:
+                    cagr = (self.income_goal / decile_income) ** (1 / years_to_end) - 1
+                else:
+                    cagr = 0  # Assigning 0 if the decile income is 0 or years to end is not positive
+
+                # Store the CAGR value for the decile
+                country.cagr_by_decile[f'decile{decile_num}'] = cagr
        

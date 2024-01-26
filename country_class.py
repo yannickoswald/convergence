@@ -21,10 +21,49 @@ class Country():
                 self.carbon_income_elasticity = carbon_income_elasticity
         """
         def __init__(self, scenario, **kwargs):
+
                 """
                 Parameters:
                         The parameters here are given as attributes and are specified in the class doc.
                 """
+                self.scenario = scenario
+                self.year = 2022  # All countries are initialized with 2022 data
+                self.cagr_by_decile = {}  # Necessary for convergence growth rates in scenario method
+
+                # Dictionary mapping kwargs names to class attribute names
+                attribute_mapping = {
+                        'index': 'id',
+                        'region_name': 'region',
+                        'region_code': 'region_code',
+                        'country_name': 'name',
+                        'country_code': 'code',
+                        'mean': 'hh_mean',
+                        'gdp_pc_ppp_2017': 'gdp_pc',
+                        'gini': 'gini_hh',
+                        'carbon_intensity': 'carbon_intensity', # this is the intensity of carbon per $ of income in 2022 (2021 and 2022 already modelled on trend)
+                        'carbon_intensity_trend': 'carbon_intensity_trend', # This is the trend in carbon intensity 2010 - 2020
+
+                
+                        # Add more mappings as needed
+                        }
+
+                # Set attributes based on mapping
+                for kwarg_attr, class_attr in attribute_mapping.items():
+                        if kwarg_attr in kwargs:
+                                setattr(self, class_attr, kwargs[kwarg_attr])
+
+                # Set other attributes dynamically with 'country_' prefix
+                for key, value in kwargs.items():
+                        if key not in attribute_mapping:
+                                setattr(self, f'country_{key}', value)
+
+
+
+
+
+
+
+                self.cagr_by_decile = {} # Necessary to compute the convergence growth rates in scenario method compute_country_params
 
                 ## set the above attributes, and all other attributes, dynamically
                 for key, value in kwargs.items():
@@ -56,8 +95,8 @@ class Country():
                 return cagr
         
                 
-        def growth(self):
-                self.income = self.income * (1+self.growth_rate)  
+        def growth(self, group, group_cagr):
+                self.income = self.decile_abs * (1+self.growth_rate)  
 
         def set_decile(self, decile_name, value):
                 # Set the value for the given decile name
@@ -69,7 +108,6 @@ class Country():
 
         def __str__(self):
                 return str(self.deciles)
-
 
         def __repr__(self): # This is the string representation of the object
                 # Retrieve the dynamic attributes by removing the 'country_' prefix and format them.
