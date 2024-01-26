@@ -42,8 +42,17 @@ class Country():
                         'gini': 'gini_hh',
                         'carbon_intensity': 'carbon_intensity', # this is the intensity of carbon per $ of income in 2022 (2021 and 2022 already modelled on trend)
                         'carbon_intensity_trend': 'carbon_intensity_trend', # This is the trend in carbon intensity 2010 - 2020
-
-                
+                        'decile_abs1': 'decile_abs1',
+                        'decile_abs2': 'decile_abs2',
+                        'decile_abs3': 'decile_abs3',
+                        'decile_abs4': 'decile_abs4',
+                        'decile_abs5': 'decile_abs5',
+                        'decile_abs6': 'decile_abs6',
+                        'decile_abs7': 'decile_abs7',
+                        'decile_abs8': 'decile_abs8',
+                        'decile_abs9': 'decile_abs9',
+                        'decile_abs10': 'decile_abs10',
+                        'gdp_to_mean_hh_income_ratio': 'gdp_to_mean_hh_income_ratio',
                         # Add more mappings as needed
                         }
 
