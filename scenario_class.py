@@ -90,4 +90,6 @@ class Scenario():
 
                 # Store the CAGR value for the decile
                 country.cagr_by_decile[f'decile{decile_num}'] = cagr
+
+            # Compute the CAGR for the country
        

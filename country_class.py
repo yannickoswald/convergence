@@ -52,8 +52,7 @@ class Country():
                         'decile_abs8': 'decile_abs8',
                         'decile_abs9': 'decile_abs9',
                         'decile_abs10': 'decile_abs10',
-                        'gdp_to_mean_hh_income_ratio': 'gdp_to_mean_hh_income_ratio',
-                        # Add more mappings as needed
+                        'gdp_to_mean_hh_income_ratio': 'gdp_hh_income_ratio',
                         }
 
                 # Set attributes based on mapping
@@ -65,19 +64,6 @@ class Country():
                 for key, value in kwargs.items():
                         if key not in attribute_mapping:
                                 setattr(self, f'country_{key}', value)
-
-
-
-
-
-
-
-                self.cagr_by_decile = {} # Necessary to compute the convergence growth rates in scenario method compute_country_params
-
-                ## set the above attributes, and all other attributes, dynamically
-                for key, value in kwargs.items():
-                        setattr(self, f'country_{key}', value)
-
 
 
         def calculate_national_cagr(self, beginning_value, ending_value):
