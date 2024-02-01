@@ -25,6 +25,9 @@ class Scenario():
         Parameters:
                 Scenario parameters
         """
+
+        self.start_year = 2022  # Assuming the scenario starts in 2023 (2022 is the last year of the data)
+        self.current_year = self.start_year
         self.end_year = scenario_params["end_year"]
         self.income_goal = scenario_params["income_goal"]
         self.raw_data = self.load_country_data()
@@ -63,18 +66,19 @@ class Scenario():
                 attributes = country_data.to_dict()
                 country_name_or_code = attributes.pop('country_name', attributes.get('country_code'))
                 countries[country_name_or_code] = Country(self, **attributes)
-
             return countries
     
-    def compute_country_params(self):
+
+    def compute_group_growth_rates(self):
+        
         """
         Description: 
-                Compute country parameters based on scenario parameters.
+                Compute the CAGR for the country
         Parameters:
                 None
         """
 
-        start_year = 2023  # Assuming the scenario starts in 2023
+        start_year = self.start_year  # Assuming the scenario starts in 2023
         years_to_end = self.end_year - start_year
 
         for country in self.countries.values():
@@ -91,5 +95,47 @@ class Scenario():
                 # Store the CAGR value for the decile
                 country.cagr_by_decile[f'decile{decile_num}'] = cagr
 
-            # Compute the CAGR for the country
+
+    def compute_country_scenario_params(self):
+
+        """
+        Description: 
+                Compute country parameters based on scenario parameters.
+
+                that is 
+                 - growth rates for each decile
+        Parameters:
+                None
+        """
+
+        self.compute_group_growth_rates()
+
+
+    def step(self):
+            
+            """
+            Description: 
+                    Compute one scenario step
+            Parameters:
+                    None
+            """
+
+            for country in self.countries.values():
+                country.growth()
+
+    def run(self):
+
+        """
+        Description: 
+                Run the scenario
+        Parameters:
+                None
+        """
+
+        for year in range(self.start_year, self.end_year + 1):
+            print("the year is ", year)
+            self.current_year = year
+            self.step()
+
+    
        
