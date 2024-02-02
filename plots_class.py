@@ -49,6 +49,9 @@ class Plots():
         ax[0].legend(['HH disposable income per capita', 'GDP per capita'])
         # no margins
         ax[0].margins(0)
+        # set ylims lower bound to 0 but no upper bound
+        ax[0].set_ylim(bottom=0)
+    
     
         # on the right panel plot the household income trajectories for each decile iterating over the dict self.decile_trajectories where each entry is another dict with the years as keys and the decile mean income as values
         for decile in country.decile_trajectories.items():
@@ -61,6 +64,8 @@ class Plots():
 
         # no margins
         ax[1].margins(0)
+         # set ylims lower bound to 0 but no upper bound
+        ax[1].set_ylim(bottom=0)
         # tight layout
         plt.tight_layout()
         # show plot
