@@ -46,8 +46,8 @@ class Plots():
         print(list(country.income_hh_trajectory.keys()))
         print(list(country.income_hh_trajectory.values()))
 
-        ax[0].plot(list(country.income_hh_trajectory.keys()), list(country.income_hh_trajectory.values()))
-        ax[0].plot(list(country.gdppc_trajectory.keys()), list(country.gdppc_trajectory.values()))
+        ax[0].plot(list(country.income_hh_trajectory.keys()), list(country.income_hh_trajectory.values()), color = "tab:orange")
+        ax[0].plot(list(country.gdppc_trajectory.keys()), list(country.gdppc_trajectory.values()), color = "tab:blue")
         # axes labels
         ax[0].set_xlabel('Year')
         ax[0].set_ylabel('$ (PPP)')
@@ -128,7 +128,7 @@ class Plots():
         ax.plot(sorted_years, sorted_income_hh_trajectory)
         ax.set_xlabel('Year')
         ax.set_ylabel('$ (PPP)')
-        ax.legend(['Global GDP per capita', 'Global HH disposable income per capita'])
+        ax.legend(['Global GDP (Total)', 'Global HH disposable income (Total)'])
         ax.margins(0)
         ax.set_ylim(bottom=0)
         plt.tight_layout()
