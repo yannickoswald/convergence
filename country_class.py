@@ -41,6 +41,7 @@ class Country():
                 self.income_hh_trajectory = {}  # Necessary for plotting the trajectory of the countrys
                 self.gdppc_trajectory = {}  # Necessary for plotting the trajectory of the countrys
                 self.decile_trajectories = {}  # Necessary for plotting the trajectory of the countrys deciles here each dictionary entry is another dictionary with the years as keys and the decile incomes as values
+                self.population_trajectory = {}  # Necessary for plotting the trajectory of the countrys population
 
                 # Dictionary mapping kwargs names to class attribute names
                 attribute_mapping = {
@@ -48,8 +49,8 @@ class Country():
                         'region_name': 'region',
                         'region_code': 'region_code',
                         'country_code': 'code',
-                        'mean': 'hh_mean',
-                        'gdp_pc_ppp_2017': 'gdp_pc',
+                        'mean': 'hh_mean', # this per year and per capita
+                        'gdp_pc_ppp_2017': 'gdp_pc', # this per year and per capita
                         'gini': 'gini_hh',
                         'carbon_intensity': 'carbon_intensity', # this is the intensity of carbon per $ of income in 2022 (2021 and 2022 already modelled on trend)
                         'carbon_intensity_trend': 'carbon_intensity_trend', # This is the trend in carbon intensity 2010 - 2020
@@ -99,6 +100,7 @@ class Country():
                         self.income_hh_trajectory[self.year] = self.hh_mean
                 
                 self.gdppc_trajectory[self.year] = self.gdp_pc # this is the mean gross domestic product per capita
+                self.population_trajectory[self.year] = self.population # this is the population
 
                 # add and save current decile incomes to the decile trajectories where every decile in the dictionary is another dictionary with the years as keys and the decile incomes as values
                 for decile_num in range(1, 11):
@@ -129,11 +131,13 @@ class Country():
                 self.hh_mean = sum([getattr(self, f'decile{decile_num}_abs') for decile_num in range(1, 11)]) / 10
                 # compute NEW gdp per capita
                 # the gdp ratio is conditional on the mean household income see script first data explorations
-                # if it is lower than 10000 then the ratio is fixed at their empirically observed ratio
-                if self.hh_mean < 10000:
+                if self.hh_mean < 5000: # use piecewise linear fits from first data explorations for this, so yearly cons. exp/disposable income vs. gdp to mean household income ratio
+                         self.gdp_hh_income_ratio = -0.0000571 * (self.hh_mean) + 0.67
+                         print("this is gdp_hh_income_ratio", self.gdp_hh_income_ratio)
                          self.gdp_pc =  self.hh_mean / self.gdp_hh_income_ratio 
                 else:
-                         self.gdp_pc = self.hh_mean / 0.46 # this is the ratio of gdp to mean household income for countries with mean household income > 10000 which seems to be a reasonable assumption according to the cross sectional country data 
+                         self.gdp_hh_income_ratio = 0.000002 * (self.hh_mean) + 0.39
+                         self.gdp_pc = self.hh_mean  / self.gdp_hh_income_ratio # this is the ratio of gdp to mean household income for countries with mean household income > 10000 which seems to be a reasonable assumption according to the cross sectional country data 
 
 
         def population_growth(self):

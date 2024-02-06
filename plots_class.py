@@ -14,7 +14,6 @@ class Plots():
 
     def __init__(self, scenario):
 
-
         """
         Description: 
                 A class organizing all the plots of a specific scenario
@@ -28,7 +27,14 @@ class Plots():
 
     
     def plot_specific_country_econ(self, country):
-
+        
+        """
+        Description: 
+            A method that plots one given country's economic trajectory and for all deciles
+        
+        Parameters:
+            (1) country: the country to be plotted
+        """ 
 
         country = self.scenario.countries[country]
 
@@ -70,6 +76,66 @@ class Plots():
         plt.tight_layout()
         # show plot
         plt.show()
+
+
+    def plot_global_economy(self):
+        """
+        Description: 
+            A method that plots the global economy trajectory
+        
+        Parameters:
+            None
+        """ 
+        # sum gdp over all countries in the given scenario and also household income and plot the two trajectories over the years
+        # Initialize empty dictionaries to store the global trajectories
+        global_gdp_trajectory = {}
+        global_income_hh_trajectory = {}
+
+        # Iterate over all countries in the scenario
+        for country in self.scenario.countries.values():
+            # Iterate over the years in the country's GDP per capita trajectory
+            for year, gdp_pc in country.gdppc_trajectory.items():
+                # Multiply the GDP per capita value with the country's population at the given year
+                gdp_total = gdp_pc * country.population_trajectory[year]
+
+                # If the year is already in the global trajectory dictionary, add the GDP per capita value to the existing value
+                if year in global_gdp_trajectory:
+                    global_gdp_trajectory[year] +=  gdp_total
+                # Otherwise, create a new entry in the global trajectory dictionary with the GDP per capita value
+                else:
+                    global_gdp_trajectory[year] =  gdp_total
+
+            # Iterate over the years in the country's household income trajectory
+            for year, income_hh in country.income_hh_trajectory.items():
+                # Multiply the household income value with the country's population at the given year
+                income_hh_total = income_hh*country.population_trajectory[year]
+
+                # If the year is already in the global trajectory dictionary, add the household income value to the existing value
+                if year in global_income_hh_trajectory:
+                    global_income_hh_trajectory[year] += income_hh_total
+                # Otherwise, create a new entry in the global trajectory dictionary with the household income value
+                else:
+                    global_income_hh_trajectory[year] = income_hh_total
+
+        # Sort the global trajectories by year
+        sorted_years = sorted(global_gdp_trajectory.keys())
+        sorted_gdp_trajectory = [global_gdp_trajectory[year] for year in sorted_years]
+        sorted_income_hh_trajectory = [global_income_hh_trajectory[year] for year in sorted_years]
+
+        # Plot the global trajectories
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(sorted_years, sorted_gdp_trajectory)
+        ax.plot(sorted_years, sorted_income_hh_trajectory)
+        ax.set_xlabel('Year')
+        ax.set_ylabel('$ (PPP)')
+        ax.legend(['Global GDP per capita', 'Global HH disposable income per capita'])
+        ax.margins(0)
+        ax.set_ylim(bottom=0)
+        plt.tight_layout()
+        plt.show()
+
+
+
 
 
 
