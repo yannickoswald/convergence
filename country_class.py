@@ -42,6 +42,7 @@ class Country():
                 self.gdppc_trajectory = {}  # Necessary for plotting the trajectory of the countrys
                 self.decile_trajectories = {}  # Necessary for plotting the trajectory of the countrys deciles here each dictionary entry is another dictionary with the years as keys and the decile incomes as values
                 self.population_trajectory = {}  # Necessary for plotting the trajectory of the countrys population
+                self.carbon_intensity_trajectory = {}  # This is the (future) historical trajectory of the carbon intensity of the country
 
                 # Dictionary mapping kwargs names to class attribute names
                 attribute_mapping = {
@@ -101,6 +102,7 @@ class Country():
                 
                 self.gdppc_trajectory[self.year] = self.gdp_pc # this is the mean gross domestic product per capita
                 self.population_trajectory[self.year] = self.population # this is the population
+                self.carbon_intensity_trajectory[self.year] = self.carbon_intensity # this is the carbon intensity of the country
 
                 # add and save current decile incomes to the decile trajectories where every decile in the dictionary is another dictionary with the years as keys and the decile incomes as values
                 for decile_num in range(1, 11):
@@ -129,15 +131,22 @@ class Country():
                 # COMPUTE NEW AGGREGATE QUANTITIES        
                 # compute NEW mean country household cons. exp.income as average of decile incomes
                 self.hh_mean = sum([getattr(self, f'decile{decile_num}_abs') for decile_num in range(1, 11)]) / 10
-                # compute NEW gdp per capita
-                # the gdp ratio is conditional on the mean household income see script first data explorations
-                if self.hh_mean < 5000: # use piecewise linear fits from first data explorations for this, so yearly cons. exp/disposable income vs. gdp to mean household income ratio
-                         self.gdp_hh_income_ratio = -0.0000571 * (self.hh_mean) + 0.67
-                         print("this is gdp_hh_income_ratio", self.gdp_hh_income_ratio)
-                         self.gdp_pc =  self.hh_mean / self.gdp_hh_income_ratio 
-                else:
-                         self.gdp_hh_income_ratio = 0.000002 * (self.hh_mean) + 0.39
-                         self.gdp_pc = self.hh_mean  / self.gdp_hh_income_ratio # this is the ratio of gdp to mean household income for countries with mean household income > 10000 which seems to be a reasonable assumption according to the cross sectional country data 
+                
+                #### compute NEW gdp per capita ####
+                #### DIFFERENTIATE GDP SCENARIOS/ASSUMPTIONS ####
+                #################################################
+                if self.scenario.gdp_assumption == "constant_ratio":
+                        ## just apply the empirically found ratio of gdp to mean household income
+                        self.gdp_pc =  self.hh_mean / self.gdp_hh_income_ratio                     
+                elif self. scenario.gdp_assumption == "model_ratio":
+                        # the gdp ratio is conditional on the mean household income see script first data explorations
+                        if self.hh_mean < 5000: # use piecewise linear fits from first data explorations for this, so yearly cons. exp/disposable income vs. gdp to mean household income ratio
+                                self.gdp_hh_income_ratio = -0.0000571 * (self.hh_mean) + 0.67
+                                print("this is gdp_hh_income_ratio", self.gdp_hh_income_ratio)
+                                self.gdp_pc =  self.hh_mean / self.gdp_hh_income_ratio 
+                        else:
+                                self.gdp_hh_income_ratio = 0.000002 * (self.hh_mean) + 0.39
+                                self.gdp_pc = self.hh_mean  / self.gdp_hh_income_ratio # this is the ratio of gdp to mean household income for countries with mean household income > 10000 which seems to be a reasonable assumption according to the cross sectional country data 
 
 
         def population_growth(self):

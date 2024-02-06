@@ -135,6 +135,50 @@ class Plots():
         plt.show()
 
 
+    def plot_global_emissions(self):
+        """
+        Description: 
+            A method that plots the global emissions trajectory
+            
+        Parameters:
+            None
+        """ 
+        # Initialize an empty dictionary to store the global emissions trajectory
+        global_emissions_trajectory = {}
+
+        # Iterate over all countries in the scenario
+        for country in self.scenario.countries.values():
+            # Iterate over the years in the country's GDP per capita trajectory
+            for year, gdp_pc in country.gdppc_trajectory.items():
+                # Multiply the GDP per capita value with the country's population at the given year
+                gdp_total = gdp_pc * country.population_trajectory[year]
+
+                # Multiply the GDP total with the country's carbon intensity at the given year
+                emissions_total = gdp_total * country.carbon_intensity_trajectory[year]
+
+                # If the year is already in the global emissions trajectory dictionary, add the emissions value to the existing value
+                if year in global_emissions_trajectory:
+                    global_emissions_trajectory[year] += emissions_total
+                # Otherwise, create a new entry in the global emissions trajectory dictionary with the emissions value
+                else:
+                    global_emissions_trajectory[year] = emissions_total
+
+        # Sort the global emissions trajectory by year
+        sorted_years = sorted(global_emissions_trajectory.keys())
+        sorted_emissions_trajectory = [global_emissions_trajectory[year] for year in sorted_years]
+
+        # Plot the global emissions trajectory
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(sorted_years, sorted_emissions_trajectory)
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Emissions (metric tons)')
+        ax.legend(['Global Emissions'])
+        ax.margins(0)
+        ax.set_ylim(bottom=0)
+        plt.tight_layout()
+        plt.show()
+
+
 
 
 

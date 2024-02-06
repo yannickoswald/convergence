@@ -12,6 +12,11 @@ class Scenario():
         (1) Scenario-parameters
             time_frame       - time it takes to perfect convergence 
             income_goal      - income that countries convergence towards to
+            carbon_budget    - the amount of carbon that can be emitted
+            gdp_assumption   - fundamental model assumption about the ratio of GDP to household income
+                               Two possible values: constant_ratio, model_ratios
+                               If this is constant_ratio it just applies the empirically observed ratio of countries.
+                               If this is model_ratio it applies piecewise linear model to the ratio of GDP to household income
             
         (2) Country-data
             data             - real-world data of all countries
@@ -32,6 +37,17 @@ class Scenario():
         self.raw_data = self.load_country_data()
         self.countries = self.initialize_countries()  # Use self since this method now belongs to the class
         self.population_growth_rates = self.load_population_growth_rates()
+
+        # Check if 'gdp_assumption' in scenario_params is a string and one of the two specified values
+        gdp_assumption_value = scenario_params.get("gdp_assumption", None)
+        valid_values = ["constant_ratio", "model_ratio"]
+
+        if isinstance(gdp_assumption_value, str) and gdp_assumption_value in valid_values:
+            self.gdp_assumption = gdp_assumption_value
+        else:
+            # Handle the case where 'gdp_assumption' is not a string or not one of the specified values
+            raise ValueError(f"gdp_assumption must be a string and one of {valid_values}")
+        
 
     @staticmethod
     def load_country_data():
@@ -151,7 +167,7 @@ class Scenario():
                 country.economic_growth()
                 country.population_growth()
                 country.year += 1 # increase the year by one
-                
+
     def run(self):
 
         """
