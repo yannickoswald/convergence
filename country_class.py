@@ -64,6 +64,7 @@ class Country():
                         'decile9_abs': 'decile9_abs',
                         'decile10_abs': 'decile10_abs',
                         'gdp_to_mean_hh_income_ratio': 'gdp_hh_income_ratio',
+                        'population': 'population'
                         }
 
                 # Set attributes based on mapping
@@ -80,10 +81,10 @@ class Country():
 
 
         def save_current_state(self):
+
                 """
                 Description: 
-                        A class representing one country and its
-                        defining parameters.
+                        A method saving the current state of the country. This is necessary for plotting the trajectory of the country's income and gdp per capita.
                 
                 Parameters:
                         None
@@ -106,7 +107,7 @@ class Country():
                                 self.decile_trajectories[f'decile{decile_num}'] = {}
                         self.decile_trajectories[f'decile{decile_num}'][self.year] = decile_income
                 
-        def growth(self):
+        def economic_growth(self):
 
                 # save current state
                 self.save_current_state()
@@ -134,8 +135,19 @@ class Country():
                 else:
                          self.gdp_pc = self.hh_mean / 0.46 # this is the ratio of gdp to mean household income for countries with mean household income > 10000 which seems to be a reasonable assumption according to the cross sectional country data 
 
-                self.year += 1 # increase the year by one
 
+        def population_growth(self):
+                # based on the assigned scenario instance which carries the scenario.population_growth_rates dataframe with row keys as country codes make the population grow
+                # get the growth rate for the country for the correct year which is the current year
+                # Filter the DataFrame for the row matching both the country code and the correct year.
+                # Assuming 'year' is also a column in the DataFrame, and it stores years as integers or strings that match self.year + 1.
+                growth_rate = self.scenario.population_growth_rates.loc[str(self.code)][str(self.year)]
+                if growth_rate is not None:
+                        new_population = self.population * (1 + growth_rate)
+                        self.population = new_population
+                else:
+                        print("No growth rate found for", self.code, "in year", self.year)
+        
         def __repr__(self): # This is the string representation of the object
                 # Retrieve the dynamic attributes by removing the 'country_' prefix and format them.
                 attributes = [f"{key.split('country_')[1]}: {getattr(self, key)}" for key in self.__dict__ if key.startswith('country_')]

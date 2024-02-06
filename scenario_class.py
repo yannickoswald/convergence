@@ -27,23 +27,50 @@ class Scenario():
         """
 
         self.start_year = 2022  # Assuming the scenario starts in 2023 (2022 is the last year of the data)
-        self.current_year = self.start_year
         self.end_year = scenario_params["end_year"]
         self.income_goal = scenario_params["income_goal"]
         self.raw_data = self.load_country_data()
         self.countries = self.initialize_countries()  # Use self since this method now belongs to the class
+        self.population_growth_rates = self.load_population_growth_rates()
 
-    @classmethod
-    def load_country_data(cls):
+    @staticmethod
+    def load_country_data():
         """
         Description: 
-                Load the data.
+                Load the country level data with most variables being values for 2022.
         Parameters:
                 None
         """
-        with open(os.path.join('data\pip_all_data', 'data_nowcasted_extended.csv')) as f:
-            data = pd.read_csv(f, encoding='unicode_escape')
-        return data
+        try:
+            file_path = os.path.join('data', 'pip_all_data', 'data_nowcasted_extended.csv')
+            data = pd.read_csv(file_path, encoding='unicode_escape')
+            return data
+        except FileNotFoundError:
+            print("File not found. Please ensure the file path is correct.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+    
+    @staticmethod
+    def load_population_growth_rates():
+        """
+        Description: 
+                Load the population growth rates.
+        Parameters:
+                None
+        """
+
+        try:
+            file_path = os.path.join('data', 'pip_all_data', 'population_growth_rates.csv')
+            data = pd.read_csv(file_path, sep=";", encoding='unicode_escape')
+            data.set_index('code', inplace=True)
+            return data
+        except FileNotFoundError:
+            print("File not found. Please ensure the file path is correct.")
+        except KeyError:
+            print("Error setting index: 'code' column not found.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+    
 
     def initialize_countries(self):
             
@@ -73,7 +100,7 @@ class Scenario():
         
         """
         Description: 
-                Compute the CAGR for the country
+                Compute the economic CAGR for the country
         Parameters:
                 None
         """
@@ -113,16 +140,18 @@ class Scenario():
 
     def step(self):
             
-            """
-            Description: 
-                    Compute one scenario step
-            Parameters:
-                    None
-            """
-
-            for country in self.countries.values():
-                country.growth()
-
+        """
+        Description: 
+                Compute one scenario step
+        Parameters:
+                None
+        """
+        
+        for country in self.countries.values():
+                country.economic_growth()
+                country.population_growth()
+                country.year += 1 # increase the year by one
+                
     def run(self):
 
         """
@@ -132,9 +161,7 @@ class Scenario():
                 None
         """
 
-        for year in range(self.start_year, self.end_year + 1):
-            print("the year is ", year)
-            self.current_year = year
+        for year in range(self.start_year, self.end_year): # the scenario must run the change from 2022 to 2023 and as last step the change from endyear - 1 to endyear, it cannot run through endyear again
             self.step()
 
     
