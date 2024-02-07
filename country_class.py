@@ -1,3 +1,5 @@
+import numpy as np
+
 class Country():
 
         """
@@ -38,11 +40,14 @@ class Country():
                 self.scenario = scenario
                 self.year = 2022  # All countries are initialized with 2022 data
                 self.cagr_by_decile = {}  # Necessary for convergence growth rates in scenario method
+
+                # Initialize dictionaries for the country's trajectories which is necessary data to be collected for plotting.
                 self.income_hh_trajectory = {}  # Necessary for plotting the trajectory of the countrys
                 self.gdppc_trajectory = {}  # Necessary for plotting the trajectory of the countrys
                 self.decile_trajectories = {}  # Necessary for plotting the trajectory of the countrys deciles here each dictionary entry is another dictionary with the years as keys and the decile incomes as values
                 self.population_trajectory = {}  # Necessary for plotting the trajectory of the countrys population
                 self.carbon_intensity_trajectory = {}  # This is the (future) historical trajectory of the carbon intensity of the country
+                self.emissions_trajectory = {}  # This is the (future) historical trajectory of the emissions of the country
 
                 # Dictionary mapping kwargs names to class attribute names
                 attribute_mapping = {
@@ -69,7 +74,7 @@ class Country():
                         'population': 'population'
                         }
 
-                # Set attributes based on mapping
+                # Set attributes based on attribute mapping above
                 for kwarg_attr, class_attr in attribute_mapping.items():
                         if kwarg_attr in kwargs:
                                 setattr(self, class_attr, kwargs[kwarg_attr])
@@ -86,7 +91,7 @@ class Country():
 
                 """
                 Description: 
-                        A method saving the current state of the country. This is necessary for plotting the trajectory of the country's income and gdp per capita.
+                        A method saving the current state of the country across all kinds of variables. This is necessary for plotting the trajectory of the country's income and gdp per capita.
                 
                 Parameters:
                         None
@@ -103,6 +108,7 @@ class Country():
                 self.gdppc_trajectory[self.year] = self.gdp_pc # this is the mean gross domestic product per capita
                 self.population_trajectory[self.year] = self.population # this is the population
                 self.carbon_intensity_trajectory[self.year] = self.carbon_intensity # this is the carbon intensity of the country
+                self.emissions_trajectory[self.year] = self.carbon_intensity * self.gdp_pc * self.population / 1000 # this is the emissions of the country, divide by 1000 to get to metric tons from kg
 
                 # add and save current decile incomes to the decile trajectories where every decile in the dictionary is another dictionary with the years as keys and the decile incomes as values
                 for decile_num in range(1, 11):
@@ -110,12 +116,36 @@ class Country():
                         if f'decile{decile_num}' not in self.decile_trajectories:
                                 self.decile_trajectories[f'decile{decile_num}'] = {}
                         self.decile_trajectories[f'decile{decile_num}'][self.year] = decile_income
+
+        def technological_change(self):
+
+                """
+                Description: 
+                        A method computing the technological change of the country expressed as a change in carbon intensity.
+
+                Parameters:
+                        None
+
+                """
+                # for the first ten years assume the ongoing trend in carbon intensity from 2010 to 2020
+                if self.year < 2032:
+                        self.carbon_intensity = self.carbon_intensity * (1 + self.carbon_intensity_trend)
+                # after that assume a constant the logarithmic model empirically determined via cross country data gdppc 2022 vs trend 2010 2020
+                # which is this equation y = -0.015ln(x) + 0.1309 where x is the gdp per capita in 2022 and y is the trend in carbon intensity from 2010 to 2020
+                else:   
+                        modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
+                        self.carbon_intensity = self.carbon_intensity * (1 + modelled_trend)
                 
         def economic_growth(self):
 
-                # save current state
-                self.save_current_state()
+                """
+                Description: 
+                        A method computing the economic growth of the country.        
+                
+                Parameters:
+                        None
 
+                """
                 # compute new state
                 # loop over all deciles and apply the growth rate
                 for decile_num in range(1, 11):
@@ -150,6 +180,16 @@ class Country():
 
 
         def population_growth(self):
+                
+                """
+                Description: 
+                        A method computing the population growth of the country. 
+                
+                Parameters:
+                        None
+
+                """
+
                 # based on the assigned scenario instance which carries the scenario.population_growth_rates dataframe with row keys as country codes make the population grow
                 # get the growth rate for the country for the correct year which is the current year
                 # Filter the DataFrame for the row matching both the country code and the correct year.
@@ -160,6 +200,7 @@ class Country():
                         self.population = new_population
                 else:
                         print("No growth rate found for", self.code, "in year", self.year)
+
         
         def __repr__(self): # This is the string representation of the object
                 # Retrieve the dynamic attributes by removing the 'country_' prefix and format them.

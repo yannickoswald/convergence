@@ -16,7 +16,7 @@ class Plots():
 
         """
         Description: 
-                A class organizing all the plots of a specific scenario
+                Initialize the Plots class with a specific scenario
         
         Parameters:
             (1) scenario: the scenario to be plotted
@@ -26,7 +26,7 @@ class Plots():
 
 
     
-    def plot_specific_country_econ(self, country):
+    def plot_country_economy(self, country):
         
         """
         Description: 
@@ -76,6 +76,41 @@ class Plots():
         plt.tight_layout()
         # show plot
         plt.show()
+
+
+
+    def plot_country_emissions(self, country):
+        """
+        Description: 
+            A method that plots one given country's emissions trajectory
+        
+        Parameters:
+            (1) country: the country to be plotted
+        """ 
+
+        country = self.scenario.countries[country]
+
+        # make plot with two panels
+        fig, ax = plt.subplots(2, 1, figsize=(10, 10))
+
+        # plot carbon intensity trajectory on panel A
+        ax[0].plot(list(country.carbon_intensity_trajectory.keys()), list(country.carbon_intensity_trajectory.values()))
+        ax[0].set_xlabel('Year')
+        ax[0].set_ylabel('Carbon Intensity')
+        ax[0].margins(0)
+        ax[0].set_ylim(bottom=0)
+
+        # plot emissions trajectory on panel B
+        ax[1].plot(list(country.emissions_trajectory.keys()), list(country.emissions_trajectory.values()))
+        ax[1].set_xlabel('Year')
+        ax[1].set_ylabel('Emissions (metric tons)')
+        ax[1].margins(0)
+        ax[1].set_ylim(bottom=0)
+
+        plt.tight_layout()
+        plt.show()
+
+
 
 
     def plot_global_economy(self):
@@ -165,16 +200,25 @@ class Plots():
 
         # Sort the global emissions trajectory by year
         sorted_years = sorted(global_emissions_trajectory.keys())
-        sorted_emissions_trajectory = [global_emissions_trajectory[year] for year in sorted_years]
+        sorted_emissions_trajectory = [global_emissions_trajectory[year]/1000 for year in sorted_years] # convert to metric tons from kg
 
         # Plot the global emissions trajectory
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.plot(sorted_years, sorted_emissions_trajectory)
         ax.set_xlabel('Year')
         ax.set_ylabel('Emissions (metric tons)')
-        ax.legend(['Global Emissions'])
         ax.margins(0)
         ax.set_ylim(bottom=0)
+
+        # plot linear carbon budget pathway
+        years_lin, emissions_lin = self.scenario.compute_linear_carbon_budget_pathway()
+        ax.plot(years_lin+2022, emissions_lin*1e9, color = "tab:orange") # convert from years to 2022 plus the years required and from gigatonnes to metric tonnes
+        # plot exponential carbon budget pathway
+        #years_exp, emissions_exp = self.scenario.compute_exponential_carbon_budget_pathway()
+        #ax.plot(years_exp+2022, emissions_exp*1e9, color = "tab:red")
+        #ax.legend(['Global Emissions'], ['Linear Carbon Budget Pathway'], ['Exponential Carbon Budget Pathway'])
+
+
         plt.tight_layout()
         plt.show()
 
