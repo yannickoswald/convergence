@@ -264,5 +264,20 @@ class Scenario():
         for year in range(self.start_year, self.end_year): # the scenario must run the change from 2022 to 2023 and as last step the change from endyear - 1 to endyear, it cannot run through endyear again
             self.step()
 
+
+    def sum_cumulative_emissions(self):
+        
+        """
+        Description: 
+                Sum the cumulative emissions for all countries over time in a given scenario
+        Parameters:
+                None
+        """
+
+        cumulative_emissions = 0
+        for country in self.countries.values():
+                # sum the emissions trajectory for each country and add to cumulative emissions
+                cumulative_emissions += sum(country.emissions_trajectory.values())
+        return cumulative_emissions
     
        

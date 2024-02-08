@@ -5,7 +5,7 @@ class Plots():
 
     """
     Description: 
-            A class organizing all the plots of a specific scenario
+         A class organizing all the plots of a specific scenario
     
     Parameters:
         (1) scenario: the scenario to be plotted
@@ -16,7 +16,7 @@ class Plots():
 
         """
         Description: 
-                Initialize the Plots class with a specific scenario
+            Initialize the Plots class with a specific scenario
         
         Parameters:
             (1) scenario: the scenario to be plotted
