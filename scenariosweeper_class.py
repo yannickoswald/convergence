@@ -122,24 +122,26 @@ class ScenarioSweeper:
             y_index = y_values.index(params_dict[variables_considered[1]])
             Z[y_index, x_index] = emission
 
-        # Plotting the contour map
-        plt.figure(figsize=(10, 6))
-        contour = plt.contourf(X, Y, Z, levels=15, cmap='inferno')
-        colorbar = plt.colorbar(contour)
-        # Label the colorbar
-        colorbar.set_label(f'Ratio of global emissions to 2\u00B0C budget', rotation=270, labelpad=15)
+        # Create figure and axes for plotting
+        fig, ax = plt.subplots(figsize=(10, 6))
+        contour = ax.contourf(X, Y, Z, levels=15, cmap='inferno')
+        colorbar = fig.colorbar(contour, ax=ax)
+        colorbar.set_label(f'Ratio of cumulative global emissions to 2\u00B0C budget', rotation=270, labelpad=15)
 
+        # Demarcate line where the ratio equals 1
+        contour_line = ax.contour(X, Y, Z, levels=[1], colors='white', linestyles='dashed')
+        ax.clabel(contour_line, fmt=f'Within 2\u00B0C budget', inline=True, fontsize=8)
 
-        #plt.title('Total Emissions by Scenario')
-        plt.xlabel(name_mapping[variables_considered[0]])
-        plt.ylabel(name_mapping[variables_considered[1]])
+        ax.set_xlabel(name_mapping[variables_considered[0]])
+        ax.set_ylabel(name_mapping[variables_considered[1]])
 
-        # Adjusting tick labels to show actual numeric values
-        plt.xticks(ticks=x_values, labels=[str(x) for x in x_values], rotation=45)
-        plt.yticks(ticks=y_values, labels=[str(y) for y in y_values])
+        ax.set_xticks(x_values)
+        ax.set_xticklabels([str(x) for x in x_values], rotation=45)
+        ax.set_yticks(y_values)
+        ax.set_yticklabels([str(y) for y in y_values])
 
-        plt.xlim(min(x_values), max(x_values))
-        plt.ylim(min(y_values), max(y_values))
+        ax.set_xlim(min(x_values), max(x_values))
+        ax.set_ylim(min(y_values), max(y_values))
 
 
         # Annotate for the year 2100 and income goal 20000
@@ -154,7 +156,7 @@ class ScenarioSweeper:
             plt.scatter(x_coord_2100, y_coord_20000, color='red', s=100, zorder=5)
 
             # Annotate with text and a straight line pointing to the point
-            plt.annotate("Roser's Denmark scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-80,-20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"))
+            plt.annotate("Roser's Denmark scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-80,-20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='black')
         except ValueError:
             print("Specified year or income goal not found in the dataset for the 2100 scenario.")
 
@@ -170,11 +172,13 @@ class ScenarioSweeper:
             plt.scatter(x_coord_2050, y_coord_9100, color='blue', s=100, zorder=5)  # Use a different color for distinction
 
             # Annotate with text and a straight line pointing to the point
-            plt.annotate("2060 Costa Rica scenario", (x_coord_2050, y_coord_9100), textcoords="offset points", xytext=(50,-20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"))
+            plt.annotate("2060 Costa Rica scenario", (x_coord_2050, y_coord_9100), textcoords="offset points", xytext=(-50,-20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
         except ValueError:
             print("Specified year or income goal not found in the dataset for the 2060 scenario.")
 
-        plt.show()
+        # Return figure and axes for external use
+        return fig, ax
+
 
     def plot_growth_vs_decarbonization_rates(self):
         pass
