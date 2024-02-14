@@ -40,6 +40,7 @@ class Country():
                 self.scenario = scenario
                 self.year = 2022  # All countries are initialized with 2022 data
                 self.cagr_by_decile = {}  # Necessary for convergence growth rates in scenario method
+                self.cagr_average = None # Necessary for AVERAGE country convergence growth rate in scenario method (so for the country as a whole it is not literally the average of decile growth rates)
 
                 # Initialize dictionaries for the country's trajectories which is necessary data to be collected for plotting.
                 self.income_hh_trajectory = {}  # Necessary for plotting the trajectory of the countrys

@@ -1,5 +1,7 @@
 from matplotlib import pyplot as plt
-
+import seaborn as sns
+import pandas as pd
+import os
 
 class Plots():
 
@@ -221,6 +223,121 @@ class Plots():
 
         plt.tight_layout()
         plt.show()
+
+
+    def plot_growth_rates_distribution(self, ax = None):
+        """
+        Description: 
+            A method that plots the distribution of necessary average economic growth rates per country to achieve the income_goal
+            
+        Parameters:
+            None
+
+        """ 
+
+        # for the given scenario plot the distribution of necessary average economic growth rates per country to achieve the income_goal
+        # for all countries in the scenario loop over the countries and plot the distribution of growth rates via the country.cagr_average
+        # Initialize an empty list to store the growth rates
+        growth_rates = []
+
+        # Iterate over all countries in the scenario
+        for country in self.scenario.countries.values():
+            # Append the average growth rate to the growth_rates list
+            growth_rates.append(country.cagr_average)
+        # Plot the distribution of growth rates using kernel density estimation
+        sns.kdeplot(growth_rates, shade=True, ax=ax)
+        ax.set_xlabel('Average Economic Growth Rate')
+        ax.set_ylabel('Density')
+
+        # Return the figure and axes object for further use
+        #return ax
+
+
+    def plot_growth_rates_vs_reality(self, ax = None):
+
+        """
+        Description: 
+            A method that plots the distribution of necessary average economic growth rates per country to achieve the income_goal
+            
+        Parameters:
+            None
+        """
+
+        try:
+            # Get the directory of the current script
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            file_path = os.path.join(script_dir, 'data', 'pip_all_data', 'gdp_pc_empirical_trend.csv')
+            data_empirical = pd.read_csv(file_path, sep=";", encoding='unicode_escape')
+            print(data_empirical)
+        except FileNotFoundError:
+            print("File not found. Please ensure the file path is correct.")
+            return  # Exit the function if file is not found
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return  # Exit the function if file is not found
+
+
+        # Define colors for different regions, this is just an example
+        # Update it according to your actual regions
+
+        region_colors = {
+           "Sub-Saharan Africa": "tab:blue",
+           "Europe & Central Asia": "tab:orange",
+           "Other High Income Countries": "tab:green",
+           "South Asia": "tab:red",
+           "Latin America & Caribbean": "tab:purple",
+           "East Asia & Pacific": "tab:brown",
+           "Middle East & North Africa": "tab:pink"
+        }
+    
+        # loop over the countries in the scenario and plot the necessary average economic growth rates vs the empirical growth rates
+        plotted_regions = set() # Keep track of which regions have already been plotted to avoid duplicate legend entries
+        for country in self.scenario.countries.values():
+            country_data = data_empirical[data_empirical['country_code'] == country.code]
+            if not country_data.empty: # Check if the country is in the empirical data
+                growth_trend = country_data["growth_trend_2012_to_2022"].iloc[0]
+                region_color = region_colors.get(country.region, 'gray')  # Use 'gray' if region not found
+                
+                # Check if the region has already been plotted
+                if country.region not in plotted_regions:
+                    ax.scatter(growth_trend, country.cagr_average, color=region_color, label=country.region, alpha=0.7)
+                    plotted_regions.add(country.region)
+                else:
+                    ax.scatter(growth_trend, country.cagr_average, color=region_color, alpha=0.7)  # No label for duplicates
+
+        # Plot x=y line and other plot elements
+        min_val, max_val = ax.get_xlim()
+        ax.plot([min_val, max_val], [min_val, max_val], 'k--', lw=1, alpha=0.5, label = "x=y")  # k-- is for black dashed line
+        # also plot a horizontal line at y=0
+        ax.axhline(0, color='black', lw=1, alpha=0.5)
+        # also plot a vertical line at x=0
+        ax.set_xlabel('cagr empirical 2012-2022')
+        ax.set_ylabel('required growth rate model')
+        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), frameon=False)
+        ax.margins(0)
+
+        # annotate the USA and China and India in the plot
+        for country in self.scenario.countries.values():
+            if country.code == "USA" or country.code == "CHN" or country.code == "IND" or country.code == "NGA" or country.code == "BRA":
+                country_data = data_empirical[data_empirical['country_code'] == country.code]
+                if not country_data.empty: # Check if the country is in the empirical data
+                    growth_trend = country_data["growth_trend_2012_to_2022"].iloc[0]
+                    # annotate the country with an arrow without arrow head
+                    if country.code == "IND":
+                        textcoordinates = (growth_trend+0.01, country.cagr_average+0.02)
+                    elif country.code == "BRA":
+                        textcoordinates = (growth_trend-0.01, country.cagr_average)
+                    elif country.code == "NGA":
+                        textcoordinates = (growth_trend, country.cagr_average+0.01)
+                    else:
+                        textcoordinates = (growth_trend-0.01, country.cagr_average-0.01)
+                    ax.annotate(country.code, (growth_trend, country.cagr_average), xytext=textcoordinates, arrowprops=dict(arrowstyle='-', lw=0.5, color='black', alpha=0.5), fontsize=8)
+    
+
+
+
+
+
 
 
 

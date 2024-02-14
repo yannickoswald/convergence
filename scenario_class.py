@@ -118,7 +118,7 @@ class Scenario():
         
         """
         Description: 
-                Compute the economic CAGR for the country
+                Compute the economic CAGR for the country per decile or another specified income group division.
         Parameters:
                 None
         """
@@ -139,6 +139,32 @@ class Scenario():
 
                 # Store the CAGR value for the decile
                 country.cagr_by_decile[f'decile{decile_num}'] = cagr
+
+    def compute_average_growth_rates(self):
+                
+        """
+        Description: 
+                Compute the average growth rate for each country.
+        Parameters:
+                None
+        """
+
+        start_year = self.start_year  # Assuming the scenario starts in 2023
+        years_to_end = self.end_year - start_year
+        for country in self.countries.values():
+                # Compute the CAGR for the average income
+                average_income = country.hh_mean *365 # convert to annual household disposable income
+
+                # Compute CAGR
+                if average_income > 0 and years_to_end > 0:
+                        cagr = (self.income_goal / average_income) ** (1 / years_to_end) - 1
+                        #print("this is cagr", cagr)
+                else:
+                        cagr = 0  # Assigning 0 if the average income is 0 or years to end is not positive
+        
+                # Store the CAGR value for the country
+                country.cagr_average = cagr
+
 
     def compute_starting_global_emissions(self):
             
@@ -168,7 +194,7 @@ class Scenario():
 
         # Compute the time to deplete the carbon budget at a constant linear rate
         time_to_deplete = (2 * self.carbon_budget) / start_emissions # using triangle formula to calculate the time to deplete the carbon budget
-        print("this is time to deplete", time_to_deplete)
+        # print("this is time to deplete", time_to_deplete)
         # Compute the slope (rate of change) of the line
         slope = -start_emissions / time_to_deplete
 
@@ -233,7 +259,8 @@ class Scenario():
                 None
         """
 
-        self.compute_group_growth_rates()
+        self.compute_group_growth_rates() # compute the growth rates for each decile
+        self.compute_average_growth_rates() # compute the average growth rates for each country
 
 
     def step(self):
@@ -261,6 +288,9 @@ class Scenario():
                 None
         """
 
+        # set up necessary parameters for the scenario
+        self.compute_country_scenario_params()
+        # run the scenario over time
         for year in range(self.start_year, self.end_year): # the scenario must run the change from 2022 to 2023 and as last step the change from endyear - 1 to endyear, it cannot run through endyear again
             self.step()
 
