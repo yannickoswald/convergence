@@ -39,18 +39,23 @@ class Scenario():
         self.raw_data = self.load_country_data()
         self.countries = self.initialize_countries()  # Use self since this method now belongs to the class
         self.population_growth_rates = self.load_population_growth_rates()
-
-        # Check if 'gdp_assumption' in scenario_params is a string and one of the two specified values
-        gdp_assumption_value = scenario_params.get("gdp_assumption", None)
-        valid_values = ["constant_ratio", "model_ratio"]
-
-        if isinstance(gdp_assumption_value, str) and gdp_assumption_value in valid_values:
-            self.gdp_assumption = gdp_assumption_value
-        else:
-            # Handle the case where 'gdp_assumption' is not a string or not one of the specified values
-            raise ValueError(f"gdp_assumption must be a string and one of {valid_values}")
+        # Check on key model assumptions
+        self.gdp_assumption = self.validate_assumption(scenario_params, "gdp_assumption", ["constant_ratio", "model_ratio"])
+        self.pop_growth_assumption = self.validate_assumption(scenario_params, "pop_growth_assumption", ["UN_medium", "semi_log_model", "semi_log_model_elasticity"])
         
-
+    @staticmethod 
+    def validate_assumption(params, key, valid_values):
+        """
+        Validates if the value for a given key assumption in params is one of the valid_values.
+        Raises ValueError if the value is not a string or not in valid_values.
+        """
+        value = params.get(key)
+        if isinstance(value, str) and value in valid_values:
+            return value
+        else:
+            raise ValueError(f"{key} must be a string and one of {valid_values}")   
+        
+        
     @staticmethod
     def load_country_data():
         """
@@ -81,6 +86,8 @@ class Scenario():
             file_path = os.path.join('data', 'pip_all_data', 'population_growth_rates.csv')
             data = pd.read_csv(file_path, sep=",", encoding='unicode_escape')
             data.set_index('code', inplace=True)
+            # replace 0 values with very small value to avoid division by zero
+            data = data.replace(0, 1e-9)          
             return data
         except FileNotFoundError:
             print("File not found. Please ensure the file path is correct.")

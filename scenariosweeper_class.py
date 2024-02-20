@@ -15,7 +15,7 @@ class ScenarioSweeper:
         (1) scenario: the scenario to be plotted
     """
 
-    def __init__(self, end_year_values, income_goal_values, carbon_budget_values, gdp_assumption_values):
+    def __init__(self, end_year_values, income_goal_values, carbon_budget_values, gdp_assumption_values, pop_growth_assumption_values):
 
 
         """
@@ -31,6 +31,7 @@ class ScenarioSweeper:
         self.income_goal_values = income_goal_values
         self.carbon_budget_values = carbon_budget_values
         self.gdp_assumption_values = gdp_assumption_values
+        self.pop_growth_assumption_values = pop_growth_assumption_values # Assume two different population growth rates
         # store emissions for each scenario in a dictionary where the key is the scenario specified via the params and the value is the total emissions
         self.total_emissions = {}
         
@@ -44,28 +45,30 @@ class ScenarioSweeper:
             None
         """ 
         # Iterate over all possible combinations of parameter values
-        for gdp_assumption in self.gdp_assumption_values:
-            for carbon_budget in self.carbon_budget_values:
-                for end_year in self.end_year_values:
-                    for income_goal in self.income_goal_values:
-                        # Create a new scenario with the current parameter values
-                        scenario_params = {
-                            "end_year": end_year,
-                            "income_goal": income_goal,
-                            "carbon_budget": carbon_budget,
-                            "gdp_assumption": gdp_assumption
-                        }
-                        scenario = self.create_scenario(scenario_params)
-                        scenario.compute_country_scenario_params()
-                        scenario.run()
+        for gdp_assumption in self.gdp_assumption_values: # this will be just one value in this iteration but for consistency and generality we loop over all the given values
+            for pop_growth_assumption in self.pop_growth_assumption_values:  # this will be just one value in this iteration but for consistency and generality we loop over all the given values
+                for carbon_budget in self.carbon_budget_values: # this will be perhaps many values
+                    for end_year in self.end_year_values: # this will be perhaps many values
+                        for income_goal in self.income_goal_values: # this will perhaps be many values
+                            # Create a new scenario with the current parameter values
+                            scenario_params = {
+                                "end_year": end_year,
+                                "income_goal": income_goal,
+                                "carbon_budget": carbon_budget,
+                                "gdp_assumption": gdp_assumption,
+                                "pop_growth_assumption": pop_growth_assumption,
+                            }
+                            scenario = self.create_scenario(scenario_params)
+                            scenario.compute_country_scenario_params()
+                            scenario.run()
 
-                        # Calculate total emissions for the current scenario
-                        total_emission = scenario.sum_cumulative_emissions()
-                        total_emissions_gigatonnes = total_emission / 1e9  # convert to gigatonnes
-                        # Store the total emissions in the list
-                        # Convert scenario_params dictionary to a tuple of tuples (key, value pairs)
-                        scenario_key = tuple(sorted(scenario_params.items()))
-                        self.total_emissions[scenario_key] = total_emissions_gigatonnes / carbon_budget # store the ratio of total emissions to the carbon budget for each scenario
+                            # Calculate total emissions for the current scenario
+                            total_emission = scenario.sum_cumulative_emissions()
+                            total_emissions_gigatonnes = total_emission / 1e9  # convert to gigatonnes
+                            # Store the total emissions in the list
+                            # Convert scenario_params dictionary to a tuple of tuples (key, value pairs)
+                            scenario_key = tuple(sorted(scenario_params.items()))
+                            self.total_emissions[scenario_key] = total_emissions_gigatonnes / carbon_budget # store the ratio of total emissions to the carbon budget for each scenario
 
         return self.total_emissions
     

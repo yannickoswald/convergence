@@ -2,6 +2,8 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 import pandas as pd
 import os
+from matplotlib.ticker import FuncFormatter
+
 
 class Plots():
 
@@ -79,6 +81,49 @@ class Plots():
         # show plot
         plt.show()
 
+    def plot_only_deciles(self, country, ax=None):
+        """
+        Description:
+            A method that plots one given country's economic trajectory for all deciles
+
+        Parameters:
+            (1) country: the country to be plotted
+        """
+        country = self.scenario.countries[country]
+
+        ax = ax or plt.gca()
+
+        # Initialize lists to store handles and labels for the legend
+        handles = []
+        labels = []
+
+        # Plot the household income trajectories for each decile
+        for decile_num, decile_data in country.decile_trajectories.items():
+            # Convert decile_num to string and get the last character
+            # if last two characters are 10, then subset last two characters
+            if str(decile_num)[-2:] == '10':
+                last_char = str(decile_num)[-2:]
+            else:
+                last_char = str(decile_num)[-1] 
+            print(last_char)
+            # Plot and collect the handle
+            handle, = ax.plot(list(decile_data.keys()), list(decile_data.values()), label=f'Decile {last_char}')
+            # Append handle and label to the lists
+            handles.append(handle)
+            labels.append(f'Decile {last_char}')
+
+        # Axes labels
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Cons. exp. $ (PPP) per capita per year')
+
+        # Reverse the handles and labels for the legend to align it with the plot order
+        ax.legend(handles[::-1], labels[::-1], bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0., frameon=False)
+
+        # No margins
+        ax.margins(0)
+        # Set ylims lower bound to 0 but no upper bound
+        ax.set_ylim(bottom=0)
+
 
 
     def plot_country_emissions(self, country):
@@ -109,6 +154,27 @@ class Plots():
         ax[1].margins(0)
         ax[1].set_ylim(bottom=0)
 
+        plt.tight_layout()
+        plt.show()
+
+    def plot_country_population(self, country):
+        """
+        Description: 
+            A method that plots one given country's population trajectory
+        
+        Parameters:
+            (1) country: the country to be plotted
+        """ 
+
+        country = self.scenario.countries[country]
+
+        # plot population trajectory
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(list(country.population_trajectory.keys()), list(country.population_trajectory.values()))
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Population')
+        ax.margins(0)
+        ax.set_ylim(bottom=0)
         plt.tight_layout()
         plt.show()
 
@@ -224,6 +290,81 @@ class Plots():
         plt.tight_layout()
         plt.show()
 
+    def plot_global_population(self):
+        """
+        Description: 
+            A method that plots the global population trajectory
+            
+        Parameters:
+            None
+        """ 
+        # Initialize an empty dictionary to store the global population trajectory
+        global_population_trajectory = {}
+
+        # Iterate over all countries in the scenario
+        for country in self.scenario.countries.values():
+            # Iterate over the years in the country's population trajectory
+            for year, population in country.population_trajectory.items():
+                # If the year is already in the global population trajectory dictionary, add the population value to the existing value
+                if year in global_population_trajectory:
+                    global_population_trajectory[year] += population
+                # Otherwise, create a new entry in the global population trajectory dictionary with the population value
+                else:
+                    global_population_trajectory[year] = population
+
+        # Sort the global population trajectory by year
+        sorted_years = sorted(global_population_trajectory.keys())
+        sorted_population_trajectory = [global_population_trajectory[year] for year in sorted_years]
+
+        # Plot the global population trajectory
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(sorted_years, sorted_population_trajectory)
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Population')
+        ax.margins(0)
+        ax.set_ylim(bottom=0)
+        plt.tight_layout()
+        plt.show()
+
+    def plot_global_gdp_per_capita(self):
+
+        # plot global gdp per capita but first you must compute total gdp per country, sum this over all countries and then divide by the global population
+        # Initialize an empty dictionary to store the global gdp per capita trajectory
+        global_gdp_per_capita_trajectory = {}
+        # Compute total GDP per country sum globally but per year 
+        total_gdp = {}
+        for country in self.scenario.countries.values():
+            for year, gdp in country.gdppc_trajectory.items():
+                if year not in total_gdp:
+                    total_gdp[year] = 0
+                total_gdp[year] += gdp*country.population_trajectory[year]
+        
+        # Compute total population per year globally
+        total_population = {}
+        for country in self.scenario.countries.values():
+            for year, population in country.population_trajectory.items():
+                if year not in total_population:
+                    total_population[year] = 0
+                total_population[year] += population
+
+        # Compute global GDP per capita trajectory
+        global_gdp_per_capita_trajectory = {year: total_gdp[year] / total_population[year] for year in total_population.keys()}
+
+        # Sort the global GDP per capita trajectory by year
+        sorted_years = sorted(global_gdp_per_capita_trajectory.keys())
+        sorted_gdp_per_capita_trajectory = [global_gdp_per_capita_trajectory[year] for year in sorted_years]
+
+        # Plot the global GDP per capita trajectory
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(sorted_years, sorted_gdp_per_capita_trajectory)
+        ax.set_xlabel('Year')
+        ax.set_ylabel('GDP per Capita ($)')
+        ax.margins(0)
+        ax.set_ylim(bottom=0)
+        plt.tight_layout()
+        plt.show()
+
+
 
     def plot_growth_rates_distribution(self, ax = None):
         """
@@ -311,10 +452,50 @@ class Plots():
         # also plot a horizontal line at y=0
         ax.axhline(0, color='black', lw=1, alpha=0.5)
         # also plot a vertical line at x=0
-        ax.set_xlabel('cagr empirical 2012-2022')
-        ax.set_ylabel('required growth rate model')
+        ax.axvline(0, color='black', lw=1, alpha=0.5)
+        # also plot a vertical line at x=0
+        ax.set_xlabel('national cagr 2012-2022')
+        ax.set_ylabel('national growth model scen.')
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1), frameon=False)
         ax.margins(0)
+        # shade the region where x > 0 and y > 0 yellow
+        ax.fill_between([0, max_val], 0, max_val, color='yellow', alpha=0.1)
+        # shade the region where x < 0 and y > 0 gree
+        ax.fill_between([min_val, 0], 0, max_val, color='green', alpha=0.1)
+        # shade the region where x > 0 and y < 0 red
+        ax.fill_between([0, max_val], min_val, 0, color='red', alpha=0.1)
+        # shade the region where x < 0 and y < 0 blue
+        ax.fill_between([min_val, 0], min_val, 0, color='blue', alpha=0.1)
+        # Dynamically get axis limits
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+
+        # Calculate dynamic positions for annotations
+        # Using a small percentage of the plot's range to offset the annotations from the edges
+        x_offset = (xlim[1] - xlim[0]) * 0.02  # 2% of the x-axis range
+        y_offset = (ylim[1] - ylim[0]) * 0.02  # 2% of the y-axis range
+
+        # Annotate quadrants with multiline text
+        ax.annotate("now growth,\nmodel growth", 
+                    xy=(xlim[1] - x_offset, ylim[1] - y_offset), 
+                    xytext=(xlim[1] - x_offset, ylim[1] - y_offset),
+                    horizontalalignment='right', verticalalignment='top', fontsize=8)
+
+        ax.annotate("now no growth,\nmodel growth", 
+                    xy=(xlim[0] + x_offset, ylim[1] - y_offset), 
+                    xytext=(xlim[0] + x_offset, ylim[1] - y_offset),
+                    horizontalalignment='left', verticalalignment='top', fontsize=8)
+
+        ax.annotate("now growth,\nno model growth", 
+                    xy=(xlim[1] - x_offset, ylim[0] + y_offset), 
+                    xytext=(xlim[1] - x_offset, ylim[0] + y_offset),
+                    horizontalalignment='right', verticalalignment='bottom', fontsize=8)
+
+        ax.annotate("now no growth,\nno model growth", 
+                    xy=(xlim[0] + x_offset, ylim[0] + y_offset), 
+                    xytext=(xlim[0] + x_offset, ylim[0] + y_offset),
+                    horizontalalignment='left', verticalalignment='bottom', fontsize=8)
+
 
         # annotate the USA and China and India in the plot
         for country in self.scenario.countries.values():
@@ -328,7 +509,7 @@ class Plots():
                     elif country.code == "BRA":
                         textcoordinates = (growth_trend-0.01, country.cagr_average)
                     elif country.code == "NGA":
-                        textcoordinates = (growth_trend, country.cagr_average+0.01)
+                        textcoordinates = (growth_trend-0.01, country.cagr_average+0.01)
                     else:
                         textcoordinates = (growth_trend-0.01, country.cagr_average-0.01)
                     ax.annotate(country.code, (growth_trend, country.cagr_average), xytext=textcoordinates, arrowprops=dict(arrowstyle='-', lw=0.5, color='black', alpha=0.5), fontsize=8)
@@ -336,7 +517,17 @@ class Plots():
 
 
 
+        # Function to format tick labels as percentages
+        def to_percentage(x, pos):
+            # Multiply by 100 and format as an integer, followed by '%'
+            return f'{x * 100:.0f}%'
 
+        # Create a formatter object
+        percentage_formatter = FuncFormatter(to_percentage)
+
+        # Apply the formatter to the x-axis and y-axis
+        ax.xaxis.set_major_formatter(percentage_formatter)
+        ax.yaxis.set_major_formatter(percentage_formatter)
 
 
 

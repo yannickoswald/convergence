@@ -41,6 +41,7 @@ class Country():
                 self.year = 2022  # All countries are initialized with 2022 data
                 self.cagr_by_decile = {}  # Necessary for convergence growth rates in scenario method
                 self.cagr_average = None # Necessary for AVERAGE country convergence growth rate in scenario method (so for the country as a whole it is not literally the average of decile growth rates)
+                self.pop_growth_rate = None # Necessary for population growth rate in case the assumption needs to dynamically change this for instane in the semi_log_model case of population growth
 
                 # Initialize dictionaries for the country's trajectories which is necessary data to be collected for plotting.
                 self.income_hh_trajectory = {}  # Necessary for plotting the trajectory of the countrys
@@ -185,22 +186,64 @@ class Country():
                 """
                 Description: 
                         A method computing the population growth of the country. 
+                        This method applies a rather complicated control flow for different assumptions about population growth
                 
                 Parameters:
                         None
 
                 """
+                # DIFFERENTIATE POPULATION GROWTH MAIN ASSUMPTIONS
+                if self.scenario.pop_growth_assumption == "UN_medium":
+                        # based on the assigned scenario instance which carries the scenario.population_growth_rates dataframe with row keys as country codes make the population grow
+                        # get the growth rate for the country for the correct year which is the current year
+                        # Filter the DataFrame for the row matching both the country code and the correct year.
+                        # Assuming 'year' is also a column in the DataFrame, and it stores years as integers or strings that match self.year + 1.
+                        self.pop_growth_rate = self.scenario.population_growth_rates.loc[str(self.code)][str(self.year)]
+                        if self.pop_growth_rate is not None:
+                                new_population = self.population * (1 + self.pop_growth_rate)
+                                self.population = new_population
+                        else:
+                                print("No growth rate found for", self.code, "in year", self.year)
 
-                # based on the assigned scenario instance which carries the scenario.population_growth_rates dataframe with row keys as country codes make the population grow
-                # get the growth rate for the country for the correct year which is the current year
-                # Filter the DataFrame for the row matching both the country code and the correct year.
-                # Assuming 'year' is also a column in the DataFrame, and it stores years as integers or strings that match self.year + 1.
-                growth_rate = self.scenario.population_growth_rates.loc[str(self.code)][str(self.year)]
-                if growth_rate is not None:
-                        new_population = self.population * (1 + growth_rate)
+
+                elif self.scenario.pop_growth_assumption == "semi_log_model":
+                        # in this case we start from the empirical population growth rate in 2022 and then apply the semi log model equation for population growth change rate
+                        # for the future years apply the semi log model equation for population growth change rate y = 0.09 - 0.01*log(x) 
+                        # where x is gdp per capita and y is the population growth rate
+                        self.pop_growth_rate = 0.0874 - 0.0190*np.log10(self.gdp_pc)
+                        new_population = self.population * (1 + self.pop_growth_rate)
                         self.population = new_population
-                else:
-                        print("No growth rate found for", self.code, "in year", self.year)
+
+                        
+                elif self.scenario.pop_growth_assumption == "semi_log_model_elasticity":
+                        # in this case we start from the empirical population growth rate in 2022 and then apply the semi log model equation for population growth change rate
+                        if self.year == 2022:
+                                self.pop_growth_rate = self.scenario.population_growth_rates.loc[str(self.code)][str(self.year)]
+                                if self.pop_growth_rate is not None:
+                                        new_population = self.population * (1 + self.pop_growth_rate)
+                                        self.population = new_population
+                        else:
+                                # for the future years apply the semi log model equation for population growth change rate y = 0.09 - 0.01*log(x) 
+                                # where x is gdp per capita and y is the population growth rate, so we must first calculate the derivative of y with respect to x
+                                # which is dy/dx = -0.01/x
+                                # then we calculate the elasticity of population growth with respect to gdp per capita which is the derivative of y with respect to x times x/y
+                                # which is (dy/y)/(dx/x) = dy/dx *x/y = -0.01/x * x/y = -0.01/y
+
+                                # then we also assume hystersis in this assumption, meaning we only apply this elasticity if the gdp per capita increases, if it decreases we do not change population growth rate
+                                # this means in our convergence scenario, for countries who apply deliberate degrowth, they do not actually get poorer in terms of living standards but only in gdp.
+                                # so there is no reason to assume their population growth rate would change upward in this case.
+                                if self.cagr_average > 0:
+                                        # then we apply the elasticity as percentage change in population growth rate
+                                        elasticity = -0.01/self.pop_growth_rate
+                                        self.pop_growth_rate =  self.pop_growth_rate * (1 + elasticity) # that is the higher the gdp per capita the lower the population growth rate but
+                                else:
+                                        # if the gdp per capita decreases we still apply the UN medium projections
+                                        self.pop_growth_rate = self.scenario.population_growth_rates.loc[str(self.code)][str(self.year)]
+
+                                new_population = self.population * (1 + self.pop_growth_rate)
+                                self.population = new_population
+                                
+                        
 
         
         def __repr__(self): # This is the string representation of the object
