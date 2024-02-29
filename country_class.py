@@ -28,6 +28,7 @@ class Country():
                 decile9_abs                 - absolute value for the ninth decile (mapped from 'decile9_abs')
                 decile10_abs                - absolute value for the tenth decile (mapped from 'decile10_abs')
                 gdp_hh_income_ratio         - ratio of GDP to mean household income (mapped from 'gdp_to_mean_hh_income_ratio')
+                total_emissions             - emissions of the country (mapped from 'emissions') per year total
 
         """
 
@@ -73,7 +74,8 @@ class Country():
                         'decile9_abs': 'decile9_abs',
                         'decile10_abs': 'decile10_abs',
                         'gdp_to_mean_hh_income_ratio': 'gdp_hh_income_ratio',
-                        'population': 'population'
+                        'population': 'population',
+                        'total_emissions': 'total_emissions'
                         }
 
                 # Set attributes based on attribute mapping above
@@ -129,15 +131,45 @@ class Country():
                         None
 
                 """
-                # for the first ten years assume the ongoing trend in carbon intensity from 2010 to 2020
-                if self.year < 2032:
-                        self.carbon_intensity = self.carbon_intensity * (1 + self.carbon_intensity_trend)
-                # after that assume a constant the logarithmic model empirically determined via cross country data gdppc 2022 vs trend 2010 2020
-                # which is this equation y = -0.015ln(x) + 0.1309 where x is the gdp per capita in 2022 and y is the trend in carbon intensity from 2010 to 2020
-                else:   
-                        modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
-                        self.carbon_intensity = self.carbon_intensity * (1 + modelled_trend)
+
+                # DIFFERENTIATE TECHNOLOGICAL CHANGE ASSUMPTIONS
+                #################################################
+                if self.scenario.tech_evolution_assumption == "plausible":
+                        # for the first ten years assume the ongoing trend in carbon intensity from 2010 to 2020
+                        if self.year < 2032:
+                                self.carbon_intensity = self.carbon_intensity * (1 + self.carbon_intensity_trend)
+                        # after that assume a constant the logarithmic model empirically determined via cross country data gdppc 2022 vs trend 2010 2020
+                        # which is this equation y = -0.015ln(x) + 0.1309 where x is the gdp per capita in 2022 and y is the trend in carbon intensity from 2010 to 2020
+                        else:   
+                                # distinguish between the two cases of country that grows or degrows its average gdp per capita and hence introduce hysteresis in the technological change
+                                if self.scenario.tech_hysteresis_assumption == "on":
+                                        if self.cagr_average > 0:
+                                                modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
+                                                self.carbon_intensity = self.carbon_intensity * (1 + modelled_trend)
+                                        else:
+                                                # distinguish between the two cases of country that assumes under degrowth we still have the same carbon intensity trend as before or we assume constant technology
+                                                self.carbon_intensity = self.carbon_intensity * 0.95 # assume a low progress in technology under planned degrowth i.e. -1% per year
+
+                                elif self.scenario.tech_hysteresis_assumption == "off":
+                                        modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
+                                        self.carbon_intensity = self.carbon_intensity * (1 + modelled_trend)
+                        
+                elif self.scenario.tech_evolution_assumption == "necessary":
+                        pass
                 
+        def update_emissions(self):
+
+                """
+                Description: 
+                        A method computing the emissions of the country. 
+
+                Parameters:
+                        None
+
+                """
+                self.total_emissions = self.carbon_intensity * self.gdp_pc * self.population / 1000 # this is the emissions of the country, divide by 1000 to get to metric tons from kg        
+
+
         def economic_growth(self):
 
                 """
@@ -174,7 +206,7 @@ class Country():
                         # the gdp ratio is conditional on the mean household income see script first data explorations
                         if self.hh_mean < 5000: # use piecewise linear fits from first data explorations for this, so yearly cons. exp/disposable income vs. gdp to mean household income ratio
                                 self.gdp_hh_income_ratio = -0.0000571 * (self.hh_mean) + 0.67
-                                print("this is gdp_hh_income_ratio", self.gdp_hh_income_ratio)
+                                #print("this is gdp_hh_income_ratio", self.gdp_hh_income_ratio)
                                 self.gdp_pc =  self.hh_mean / self.gdp_hh_income_ratio 
                         else:
                                 self.gdp_hh_income_ratio = 0.000002 * (self.hh_mean) + 0.39
@@ -229,7 +261,7 @@ class Country():
                                 # then we calculate the elasticity of population growth with respect to gdp per capita which is the derivative of y with respect to x times x/y
                                 # which is (dy/y)/(dx/x) = dy/dx *x/y = -0.01/x * x/y = -0.01/y
 
-                                # then we also assume hystersis in this assumption, meaning we only apply this elasticity if the gdp per capita increases, if it decreases we do not change population growth rate
+                                # then we also assume hysteresis in this assumption, meaning we only apply this elasticity if the gdp per capita increases, if it decreases we do not change population growth rate
                                 # this means in our convergence scenario, for countries who apply deliberate degrowth, they do not actually get poorer in terms of living standards but only in gdp.
                                 # so there is no reason to assume their population growth rate would change upward in this case.
                                 if self.cagr_average > 0:

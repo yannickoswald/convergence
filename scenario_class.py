@@ -31,18 +31,23 @@ class Scenario():
         Parameters:
                 Scenario parameters
         """
-
+        # Set the key scenario parameters
         self.start_year = 2022  # Assuming the scenario starts in 2023 (2022 is the last year of the data)
         self.end_year = scenario_params["end_year"]
         self.income_goal = scenario_params["income_goal"]
         self.carbon_budget = scenario_params["carbon_budget"]
+
+        # Load the country data
         self.raw_data = self.load_country_data()
         self.countries = self.initialize_countries()  # Use self since this method now belongs to the class
         self.population_growth_rates = self.load_population_growth_rates()
+
         # Check on key model assumptions
         self.gdp_assumption = self.validate_assumption(scenario_params, "gdp_assumption", ["constant_ratio", "model_ratio"])
         self.pop_growth_assumption = self.validate_assumption(scenario_params, "pop_growth_assumption", ["UN_medium", "semi_log_model", "semi_log_model_elasticity"])
-        
+        self.tech_evolution_assumption = self.validate_assumption(scenario_params, "tech_evolution_assumption", ["plausible", "necessary"])
+        self.tech_hysteresis_assumption = self.validate_assumption(scenario_params, "tech_hysteresis_assumption", ["on", "off"])
+
     @staticmethod 
     def validate_assumption(params, key, valid_values):
         """
@@ -172,6 +177,42 @@ class Scenario():
                 # Store the CAGR value for the country
                 country.cagr_average = cagr
 
+    def compute_average_global_hh_income(self):
+            
+            """
+            Description: 
+                    Compute the average global household income.
+            Parameters:
+                    None
+            """
+
+            global_hh_income_total = 0
+            global_population = 0
+            for country in self.countries.values():
+                global_hh_income_total += country.hh_mean * country.population * 365 # convert to annual household disposable income
+                global_population += country.population
+      
+            return global_hh_income_total / global_population
+
+    def compute_average_global_growth_rate(self):
+                  
+           """
+           Description: 
+                 Compute the average global growth rate.
+           Parameters:
+                 None
+           """
+        
+           start_year = self.start_year  # Assuming the scenario starts in 2023
+           years_to_end = self.end_year - start_year
+           average_global_hh_income = self.compute_average_global_hh_income()
+           # Compute CAGR
+           if average_global_hh_income > 0 and years_to_end > 0:
+                cagr = (self.income_goal / average_global_hh_income) ** (1 / years_to_end) - 1           
+           else:
+                # throw error message
+                raise ValueError("Average global household income is 0 or years to end is not positive")        
+           return cagr
 
     def compute_starting_global_emissions(self):
             
@@ -213,7 +254,6 @@ class Scenario():
     
     def compute_exponential_carbon_budget_pathway(self):
         
-            
         """
         Description: 
                 Compute the exponential carbon budget pathway that respects the given budget constraint.
@@ -284,6 +324,7 @@ class Scenario():
                 country.technological_change()
                 country.economic_growth()
                 country.population_growth()
+                country.update_emissions()
                 country.year += 1 # increase the year by one
 
     def run(self):
@@ -317,4 +358,5 @@ class Scenario():
                 cumulative_emissions += sum(country.emissions_trajectory.values())
         return cumulative_emissions
     
+   
        

@@ -27,8 +27,6 @@ class Plots():
         """ 
 
         self.scenario = scenario
-
-
     
     def plot_country_economy(self, country):
         
@@ -238,14 +236,29 @@ class Plots():
         plt.show()
 
 
-    def plot_global_emissions(self):
+    def plot_global_emissions(self, **kwargs):
+        
         """
         Description: 
             A method that plots the global emissions trajectory
             
         Parameters:
-            None
+            **kwargs: Arbitrary keyword arguments including:
+                ax (matplotlib.axes.Axes): the axes object to plot on. If not provided, a new figure and axes are created.
+                color (str): Color of the emissions trajectory line.
+                label (str): Label for the emissions trajectory line.
         """ 
+
+
+         # Default values for optional parameters
+        ax = kwargs.get('ax', None)
+        color = kwargs.get('color', "tab:blue")
+        label = kwargs.get('label', "Global Emissions")
+
+        # Create a new figure and axes if not provided
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(10, 5))
+        
         # Initialize an empty dictionary to store the global emissions trajectory
         global_emissions_trajectory = {}
 
@@ -271,8 +284,7 @@ class Plots():
         sorted_emissions_trajectory = [global_emissions_trajectory[year]/1000 for year in sorted_years] # convert to metric tons from kg
 
         # Plot the global emissions trajectory
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(sorted_years, sorted_emissions_trajectory)
+        ax.plot(sorted_years, sorted_emissions_trajectory, color = color, label = label)
         ax.set_xlabel('Year')
         ax.set_ylabel('Emissions (metric tons)')
         ax.margins(0)
@@ -280,15 +292,15 @@ class Plots():
 
         # plot linear carbon budget pathway
         years_lin, emissions_lin = self.scenario.compute_linear_carbon_budget_pathway()
-        ax.plot(years_lin+2022, emissions_lin*1e9, color = "tab:orange") # convert from years to 2022 plus the years required and from gigatonnes to metric tonnes
+        ax.plot(years_lin+2022, emissions_lin*1e9, color="tab:orange", label="Linear Carbon Budget Pathway") # convert from years to 2022 plus the years required and from gigatonnes to metric tonnes
         # plot exponential carbon budget pathway
         #years_exp, emissions_exp = self.scenario.compute_exponential_carbon_budget_pathway()
         #ax.plot(years_exp+2022, emissions_exp*1e9, color = "tab:red")
         #ax.legend(['Global Emissions'], ['Linear Carbon Budget Pathway'], ['Exponential Carbon Budget Pathway'])
 
 
-        plt.tight_layout()
-        plt.show()
+        #plt.tight_layout()
+        #plt.show()
 
     def plot_global_population(self):
         """
@@ -515,8 +527,6 @@ class Plots():
                     ax.annotate(country.code, (growth_trend, country.cagr_average), xytext=textcoordinates, arrowprops=dict(arrowstyle='-', lw=0.5, color='black', alpha=0.5), fontsize=8)
     
 
-
-
         # Function to format tick labels as percentages
         def to_percentage(x, pos):
             # Multiply by 100 and format as an integer, followed by '%'
@@ -528,6 +538,58 @@ class Plots():
         # Apply the formatter to the x-axis and y-axis
         ax.xaxis.set_major_formatter(percentage_formatter)
         ax.yaxis.set_major_formatter(percentage_formatter)
+
+    
+    def plot_global_carbon_intensity(self, ax = None, color = None, label = None):
+        
+        """
+        Description:
+            A method that plots the global carbon intensity trajectory
+        
+        Parameters:
+            None    
+        
+        """
+
+        # Compute total GDP per year globally use the country.gdppc_trajectory
+        total_gdp = {}
+        for country in self.scenario.countries.values():
+            for year in country.gdppc_trajectory.keys():
+            # Compute total GDP per country sum globally but per year
+                if year not in total_gdp:
+                    total_gdp[year] = 0
+                total_gdp[year] += country.gdppc_trajectory[year]*country.population_trajectory[year]
+
+        # Compute total emissions per year globally use the country.emissions_trajectory
+        total_emissions = {}
+        for country in self.scenario.countries.values():
+            for year in country.emissions_trajectory.keys():
+                if year not in total_emissions:
+                    total_emissions[year] = 0
+                total_emissions[year] += country.emissions_trajectory[year]
+        
+
+        # Compute global carbon intensity trajectory
+        global_carbon_intensity_trajectory = {year: total_emissions[year]*1000 / total_gdp[year] for year in total_gdp.keys()} # convert to kg from metric tons hence *1000
+
+        # Sort the global carbon intensity trajectory by year
+        sorted_years = sorted(global_carbon_intensity_trajectory.keys())
+        sorted_carbon_intensity_trajectory = [global_carbon_intensity_trajectory[year] for year in sorted_years]
+
+        # Plot the global carbon intensity trajectory
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(10, 5))
+        if color is not None and label is not None:
+            ax.plot(sorted_years, sorted_carbon_intensity_trajectory, color = color, label = label)
+        else:
+            ax.plot(sorted_years, sorted_carbon_intensity_trajectory)
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Carbon Intensity in kg per 2017 PPP $ (GDP)')
+        ax.margins(0)
+        ax.set_ylim(bottom=0, top=max(sorted_carbon_intensity_trajectory) + 0.05)
+        if ax is None:
+            plt.tight_layout()
+            plt.show()
 
 
 
