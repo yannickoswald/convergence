@@ -292,7 +292,7 @@ class Plots():
 
         # plot linear carbon budget pathway
         years_lin, emissions_lin = self.scenario.compute_linear_carbon_budget_pathway()
-        ax.plot(years_lin+2022, emissions_lin*1e9, color="tab:orange", label="Linear Carbon Budget Pathway") # convert from years to 2022 plus the years required and from gigatonnes to metric tonnes
+        ax.plot(years_lin+2022, emissions_lin*1e9, color="tab:orange", label="Linear Budget") # convert from years to 2022 plus the years required and from gigatonnes to metric tonnes
         # plot exponential carbon budget pathway
         #years_exp, emissions_exp = self.scenario.compute_exponential_carbon_budget_pathway()
         #ax.plot(years_exp+2022, emissions_exp*1e9, color = "tab:red")

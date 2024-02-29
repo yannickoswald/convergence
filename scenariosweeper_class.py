@@ -166,6 +166,28 @@ class ScenarioSweeper:
         contour_line = ax.contour(X, Y, Z, levels=[1], colors='white', linestyles='dashed')
         ax.clabel(contour_line, fmt=f'Within 2\u00B0C budget', inline=True, fontsize=8)
 
+        ######## add extracted growth rates feasible regions lines
+        # Plotting the lines for level 0
+        coords_0 = np.array([[2040., 7091.76725433],
+                            [2060., 7104.1157445],
+                            [2078.19032277, 7107.60378143],
+                            [2081.80967737, 7108.11988921],
+                            [2100., 7109.81960993]])
+
+        ax.plot(coords_0[:, 0], coords_0[:, 1], 'c--', label='0%')  # 'w--' for white dashed line
+
+        # Plotting the lines for level 0.04
+        coords_004 = np.array([[2040., 13763.74664383],
+                            [2044.7325622, 15000.],
+                            [2053.52721919, 20000.],
+                            [2057.06128359, 24277.62144207],
+                            [2058.02526381, 25748.84170682],
+                            [2060., 29776.31871013],
+                            [2060.31708066, 30000.]])
+
+        ax.plot(coords_004[:, 0], coords_004[:, 1], 'c--', label='4%')  # 'w--' for white dashed line
+
+
         ax.set_xlabel(name_mapping[variables_considered[0]])
         ax.set_ylabel(name_mapping[variables_considered[1]])
 
@@ -288,6 +310,35 @@ class ScenarioSweeper:
 
             ax.set_xlim(min(x_values), max(x_values))
             ax.set_ylim(min(y_values), max(y_values))
+
+            # Demarcate line where the values equal 0, and label it
+            contour_line_0 = ax.contour(X, Y, Z, levels=[0], colors='cyan', linestyles='dashed')
+            ax.clabel(contour_line_0, fmt=f'0', inline=True, fontsize=8)
+
+            # Demarcate line where the values equal 0.04, and label it
+            contour_line_004 = ax.contour(X, Y, Z, levels=[0.04], colors='cyan', linestyles='dashed')
+            ax.clabel(contour_line_004, fmt=f'4', inline=True, fontsize=8)
+
+
+            # Extract paths
+            #paths_0 = contour_line_0.collections[0].get_paths()
+            #paths_004 = contour_line_004.collections[0].get_paths()
+
+            # Function to extract X, Y coordinates from contour paths
+            #def extract_coordinates(paths):
+             #   coords_list = []
+              #  for path in paths:
+               #     vertices = path.vertices
+                #    coords_list.append(vertices)  # Each item is an array of [X, Y] coordinates
+                #return coords_list
+
+            #coords_0 = extract_coordinates(paths_0)
+            #coords_004 = extract_coordinates(paths_004)
+
+
+            #print("this is the coords_0", coords_0)
+            #print("this is the coords_004", coords_004)
+
 
 
             # Annotate for the year 2100 and income goal 20000
