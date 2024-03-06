@@ -19,10 +19,12 @@ class ScenarioSweeper:
     def __init__(self, end_year_values,
                        income_goal_values,
                        carbon_budget_values,
+                       hysteresis_tech_progress_values,
                        gdp_assumption_values,
                        pop_growth_assumption_values,
                        tech_evolution_assumption_values,
-                       tech_hysteresis_assumption_values):
+                       tech_hysteresis_assumption_values,
+                       steady_state_high_income_assumption_values):
 
         """
         Description: 
@@ -35,10 +37,12 @@ class ScenarioSweeper:
         self.end_year_values = end_year_values
         self.income_goal_values = income_goal_values
         self.carbon_budget_values = carbon_budget_values
+        self.hysteresis_tech_progress_values = hysteresis_tech_progress_values
         self.gdp_assumption_values = gdp_assumption_values
         self.pop_growth_assumption_values = pop_growth_assumption_values # Assume two different population growth rates
         self.tech_evolution_assumption_values = tech_evolution_assumption_values # Assume two different technological evolution rates
         self.tech_hysteresis_assumption_values = tech_hysteresis_assumption_values # Assume two different technological hysteresis rates    
+        self.steady_state_high_income_assumption_values = steady_state_high_income_assumption_values # Assume two different steady state high income assumptions
         # store emissions for each scenario in a dictionary where the key is the scenario specified via the params and the value is the total emissions
         self.total_emissions = {}
         # store the global average growth rate for each scenario in a dictionary where the key is the scenario specified via the params and the value is the global average growth rate
@@ -58,45 +62,46 @@ class ScenarioSweeper:
         gdp_assumption = self.gdp_assumption_values[0] # this will be just one value in this iteration but for consistency and generality we loop over all the given values
         pop_growth_assumption = self.pop_growth_assumption_values[0] # this will be just one value in this iteration but for consistency and generality we loop over all the given values
         tech_evolution_assumption = self.tech_evolution_assumption_values[0]  # this will be just one value in this iteration but for consistency and generality we loop over all the given values
-        
+        steady_state_high_income_assumption = self.steady_state_high_income_assumption_values[0]  # this will be just one value in this iteration but for consistency and generality we loop over all the given values  
+
         # Iterate over all possible combinations of variable parameter values
-        for carbon_budget in self.carbon_budget_values: # this will be perhaps many values
-            for end_year in self.end_year_values: # this will be perhaps many values
-                for income_goal in self.income_goal_values: # this will perhaps be many values
-                    # Create a new scenario with the current parameter values
-                    scenario_params = {
-                        "end_year": end_year,
-                        "income_goal": income_goal,
-                        "carbon_budget": carbon_budget,
-                        "gdp_assumption": gdp_assumption,
-                        "pop_growth_assumption": pop_growth_assumption,
-                        "tech_evolution_assumption": tech_evolution_assumption,
-                        "tech_hysteresis_assumption": tech_hysteresis_assumption
-                    }
-                    
+        for hysteresis_tech_progress in self.hysteresis_tech_progress_values: # this will be perhaps many values
+            for carbon_budget in self.carbon_budget_values: # this will be perhaps many values
+                for end_year in self.end_year_values: # this will be perhaps many values
+                    for income_goal in self.income_goal_values: # this will perhaps be many values
+                        # Create a new scenario with the current parameter values
+                        scenario_params = {
+                            "end_year": end_year,
+                            "income_goal": income_goal,
+                            "carbon_budget": carbon_budget,
+                            "hysteresis_tech_progress": hysteresis_tech_progress,
+                            "gdp_assumption": gdp_assumption,
+                            "pop_growth_assumption": pop_growth_assumption,
+                            "tech_evolution_assumption": tech_evolution_assumption,
+                            "tech_hysteresis_assumption": tech_hysteresis_assumption,
+                            "steady_state_high_income_assumption": steady_state_high_income_assumption
+                        }
+                        
+                        scenario = self.create_scenario(scenario_params)
+                        scenario.compute_country_scenario_params()
 
+                        # Convert scenario_params dictionary to a tuple of tuples (key, value pairs)
+                        scenario_key = tuple(sorted(scenario_params.items()))
 
-                    scenario = self.create_scenario(scenario_params)
-                    scenario.compute_country_scenario_params()
+                        # Calculate the global average necessary growth rate for the current scenario at the beginning so before the scenario runs
+                        global_growth_rate = scenario.compute_average_global_growth_rate()
+                        self.growth_rate_global[scenario_key] = global_growth_rate
+                        
+                        # Run the scenario
+                        scenario.run()
 
-                    # Convert scenario_params dictionary to a tuple of tuples (key, value pairs)
-                    scenario_key = tuple(sorted(scenario_params.items()))
-
-                    # Calculate the global average necessary growth rate for the current scenario at the beginning so before the scenario runs
-                    global_growth_rate = scenario.compute_average_global_growth_rate()
-                    self.growth_rate_global[scenario_key] = global_growth_rate
-                    
-                    # Run the scenario
-                    scenario.run()
-
-                    # Calculate total emissions for the current scenario
-                    total_emission = scenario.sum_cumulative_emissions()
-                    total_emissions_gigatonnes = total_emission / 1e9  # convert to gigatonnes
-                    # Store the total emissions in the list
-                    
-                    self.total_emissions[scenario_key] = total_emissions_gigatonnes / carbon_budget # store the ratio of total emissions to the carbon budget for each scenario
-                    
-                  
+                        # Calculate total emissions for the current scenario
+                        total_emission = scenario.sum_cumulative_emissions()
+                        total_emissions_gigatonnes = total_emission / 1e9  # convert to gigatonnes
+                        # Store the total emissions in the list
+                        
+                        self.total_emissions[scenario_key] = total_emissions_gigatonnes / carbon_budget # store the ratio of total emissions to the carbon budget for each scenario
+                                   
         
         return self.total_emissions, self.growth_rate_global
     
@@ -105,7 +110,7 @@ class ScenarioSweeper:
         # and has methods compute_country_scenario_params() and run()
         return Scenario(params)
 
-    def plot_total_emissions_trade_off(self, dependent_var, variables_considered, ax=None):
+    def plot_total_emissions_trade_off(self, dependent_var, variables_considered, fixed_color_scale, annotations_plot, colorscaleon, ax=None):
         
         """
         Description: 
@@ -125,7 +130,7 @@ class ScenarioSweeper:
         y_values_set = set()
 
         name_mapping = {"end_year": "End Year",
-                        "income_goal": "Income Goal", 
+                        "income_goal": "Income Goal $PPPpc", 
                         "carbon_budget": "Carbon Budget", 
                         "gdp_assumption": "GDP Assumption"}
 
@@ -139,10 +144,8 @@ class ScenarioSweeper:
         # Convert sets to sorted lists
         x_values = sorted(x_values_set)
         y_values = sorted(y_values_set)
-
         # Create meshgrid
         X, Y = np.meshgrid(x_values, y_values)
-
         # Initialize a 2D array for emissions data
         Z = np.zeros(X.shape)
 
@@ -153,18 +156,39 @@ class ScenarioSweeper:
             y_index = y_values.index(params_dict[variables_considered[1]])
             Z[y_index, x_index] = value
 
+        # Initialize an empty dictionary for contourf arguments
+        contourf_kwargs = {
+            "levels": 15,
+            "cmap": 'inferno'
+        }
+        # Conditionally add vmin and vmax to the arguments
+        if fixed_color_scale:
+            contourf_kwargs["vmin"] = 0  # Minimum value of Z for the color scale
+            contourf_kwargs["vmax"] = 2.5  # Maximum value of Z for the color scale
+
         # Create figure and axes for plotting
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 6))
         else:
             fig = ax.get_figure()
-        contour = ax.contourf(X, Y, Z, levels=15, cmap='inferno')
-        colorbar = fig.colorbar(contour, ax=ax)
-        colorbar.set_label(f'Ratio of cumulative global emissions to 2\u00B0C budget', rotation=270, labelpad=15)
 
+        contour = ax.contourf(X, Y, Z, **contourf_kwargs)
+        if colorscaleon:
+            colorbar = fig.colorbar(contour, ax=ax)
+            colorbar.set_label(f'Ratio of cumulative global emissions to 2\u00B0C budget', rotation=270, labelpad=15, fontsize=8)
+        ax.set_xlabel(name_mapping[variables_considered[0]])
+        ax.set_ylabel(name_mapping[variables_considered[1]])
+        ax.set_xticks(x_values)
+        ax.set_xticklabels([str(x) for x in x_values], rotation=45)
+        ax.set_yticks(y_values)
+        ax.set_yticklabels([str(y) for y in y_values])
+        ax.set_xlim(min(x_values), max(x_values))
+        ax.set_ylim(min(y_values), max(y_values))
+
+        ############ ANNONTATIONS ############
         # Demarcate line where the ratio equals 1
         contour_line = ax.contour(X, Y, Z, levels=[1], colors='white', linestyles='dashed')
-        ax.clabel(contour_line, fmt=f'Within 2\u00B0C budget', inline=True, fontsize=8)
+        ax.clabel(contour_line, fmt=f'Within 2\u00B0C', inline=True, fontsize=8)
 
         ######## add extracted growth rates feasible regions lines
         # Plotting the lines for level 0
@@ -173,64 +197,48 @@ class ScenarioSweeper:
                             [2078.19032277, 7107.60378143],
                             [2081.80967737, 7108.11988921],
                             [2100., 7109.81960993]])
-
         ax.plot(coords_0[:, 0], coords_0[:, 1], 'c--', label='0%')  # 'w--' for white dashed line
 
-        # Plotting the lines for level 0.04
-        coords_004 = np.array([[2040., 13763.74664383],
-                            [2044.7325622, 15000.],
-                            [2053.52721919, 20000.],
-                            [2057.06128359, 24277.62144207],
-                            [2058.02526381, 25748.84170682],
-                            [2060., 29776.31871013],
-                            [2060.31708066, 30000.]])
+        ######## additional annotations that should be only introduced for figure 3 but not figure 4  ########
+        if annotations_plot:
+         
+            # Plotting the lines for level 0.04
+            coords_004 = np.array([[2040., 13763.74664383],
+                                [2044.7325622, 15000.],
+                                [2053.52721919, 20000.],
+                                [2057.06128359, 24277.62144207],
+                                [2058.02526381, 25748.84170682],
+                                [2060., 29776.31871013],
+                                [2060.31708066, 30000.]])
+            ax.plot(coords_004[:, 0], coords_004[:, 1], 'c--', label='4%')  # 'w--' for white dashed line
 
-        ax.plot(coords_004[:, 0], coords_004[:, 1], 'c--', label='4%')  # 'w--' for white dashed line
+            # Annotate for the year 2100 and income goal 20000
+            try:
+                x_pos_2100 = x_values.index(2100)
+                y_pos_20000 = y_values.index(20000)
+                # Convert positions to actual coordinates on the plot
+                x_coord_2100 = x_values[x_pos_2100]
+                y_coord_20000 = y_values[y_pos_20000]
+                # Annotate the point with a marker
+                ax.scatter(x_coord_2100, y_coord_20000, color='red', s=100, zorder=5)
+                # Annotate with text and a straight line pointing to the point
+                ax.annotate("2100 Denmark scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-80,-20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='black')
+            except ValueError:
+                print("Specified year or income goal not found in the dataset for the 2100 scenario.")
 
-
-        ax.set_xlabel(name_mapping[variables_considered[0]])
-        ax.set_ylabel(name_mapping[variables_considered[1]])
-
-        ax.set_xticks(x_values)
-        ax.set_xticklabels([str(x) for x in x_values], rotation=45)
-        ax.set_yticks(y_values)
-        ax.set_yticklabels([str(y) for y in y_values])
-
-        ax.set_xlim(min(x_values), max(x_values))
-        ax.set_ylim(min(y_values), max(y_values))
-
-
-        # Annotate for the year 2100 and income goal 20000
-        try:
-            x_pos_2100 = x_values.index(2100)
-            y_pos_20000 = y_values.index(20000)
-            # Convert positions to actual coordinates on the plot
-            x_coord_2100 = x_values[x_pos_2100]
-            y_coord_20000 = y_values[y_pos_20000]
-
-            # Annotate the point with a marker
-            ax.scatter(x_coord_2100, y_coord_20000, color='red', s=100, zorder=5)
-
-            # Annotate with text and a straight line pointing to the point
-            ax.annotate("2100 Denmark scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-80,-20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='black')
-        except ValueError:
-            print("Specified year or income goal not found in the dataset for the 2100 scenario.")
-
-        # Annotate for the year 2050 and income goal 9100
-        try:
-            x_pos_2050 = x_values.index(2060)
-            y_pos_9100 = y_values.index(10000)
-            # Convert positions to actual coordinates on the plot
-            x_coord_2050 = x_values[x_pos_2050]
-            y_coord_9100 = y_values[y_pos_9100]
-
-            # Annotate the point with a marker
-            ax.scatter(x_coord_2050, y_coord_9100, color='blue', s=100, zorder=5)  # Use a different color for distinction
-
-            # Annotate with text and a straight line pointing to the point
-            ax.annotate("2060\nCosta Rica\nscenario", (x_coord_2050, y_coord_9100), textcoords="offset points", xytext=(-35,-20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
-        except ValueError:
-            print("Specified year or income goal not found in the dataset for the 2060 scenario.")
+            # Annotate for the year 2050 and income goal 9100
+            try:
+                x_pos_2050 = x_values.index(2060)
+                y_pos_9100 = y_values.index(10000)
+                # Convert positions to actual coordinates on the plot
+                x_coord_2050 = x_values[x_pos_2050]
+                y_coord_9100 = y_values[y_pos_9100]
+                # Annotate the point with a marker
+                ax.scatter(x_coord_2050, y_coord_9100, color='blue', s=100, zorder=5)  # Use a different color for distinction
+                # Annotate with text and a straight line pointing to the point
+                ax.annotate("2060\nCosta Rica\nscenario", (x_coord_2050, y_coord_9100), textcoords="offset points", xytext=(40,15), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
+            except ValueError:
+                print("Specified year or income goal not found in the dataset for the 2060 scenario.")
 
         if ax is None:
             # Return figure and axes for external use
@@ -257,7 +265,7 @@ class ScenarioSweeper:
             y_values_set = set()
 
             name_mapping = {"end_year": "End Year",
-                            "income_goal": "Income Goal", 
+                            "income_goal": "Income Goal $PPPpc", 
                             "carbon_budget": "Carbon Budget", 
                             "gdp_assumption": "GDP Assumption"}
 
@@ -298,7 +306,7 @@ class ScenarioSweeper:
                 return '{:.0f}%'.format(x * 100)
             
             colorbar = fig.colorbar(contour, ax=ax, format=FuncFormatter(to_percentage))
-            colorbar.set_label('Global Growth Rate', rotation=270, labelpad=15)
+            colorbar.set_label('Global growth rate hh income', rotation=270, labelpad=15)
 
             ax.set_xlabel(name_mapping[variables_considered[0]])
             ax.set_ylabel(name_mapping[variables_considered[1]])
@@ -369,7 +377,7 @@ class ScenarioSweeper:
                 ax.scatter(x_coord_2050, y_coord_9100, color='blue', s=100, zorder=5)  # Use a different color for distinction
 
                 # Annotate with text and a straight line pointing to the point
-                ax.annotate("2060 Costa Rica scenario", (x_coord_2050, y_coord_9100), textcoords="offset points", xytext=(0,-20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
+                ax.annotate("2060 Costa Rica scenario", (x_coord_2050, y_coord_9100), textcoords="offset points", xytext=(50,20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
             except ValueError:
                 print("Specified year or income goal not found in the dataset for the 2060 scenario.")
 

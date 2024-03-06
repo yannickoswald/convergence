@@ -75,7 +75,8 @@ class Country():
                         'decile10_abs': 'decile10_abs',
                         'gdp_to_mean_hh_income_ratio': 'gdp_hh_income_ratio',
                         'population': 'population',
-                        'total_emissions': 'total_emissions'
+                        'total_emissions': 'total_emissions',
+                        'growth_trend_2012_to_2022': 'gdp_pc_historical_growth'
                         }
 
                 # Set attributes based on attribute mapping above
@@ -148,7 +149,7 @@ class Country():
                                                 self.carbon_intensity = self.carbon_intensity * (1 + modelled_trend)
                                         else:
                                                 # distinguish between the two cases of country that assumes under degrowth we still have the same carbon intensity trend as before or we assume constant technology
-                                                self.carbon_intensity = self.carbon_intensity * 0.95 # assume a low progress in technology under planned degrowth i.e. -1% per year
+                                                self.carbon_intensity = self.carbon_intensity * (1 - self.scenario.hysteresis_tech_progress) # assume a low progress in technology under planned degrowth i.e. -1% per year
 
                                 elif self.scenario.tech_hysteresis_assumption == "off":
                                         modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
@@ -187,7 +188,24 @@ class Country():
                         # use self.cagr_by_decile to get the growth rate for the decile
                         cagr = self.cagr_by_decile[f'decile{decile_num}']
                         # calculate the new income
-                        new_income = decile_income * (1 + cagr)
+                        # distinguish between steady state and non steady state assumption
+                        if self.scenario.steady_state_high_income_assumption == "on":
+                                if decile_income >= self.scenario.income_goal:
+                                        new_income = decile_income
+                                else:
+                                        new_income = decile_income * (1 + cagr)
+
+                        elif self.scenario.steady_state_high_income_assumption == "on_with_growth":
+                                if decile_income >= self.scenario.income_goal:
+                                        # if the income is already above the goal then apply the historical growth rate
+                                        new_income = decile_income * (1 + self.gdp_pc_historical_growth)
+                                else:
+                                        new_income = decile_income * (1 + cagr)
+
+                        elif self.scenario.steady_state_high_income_assumption == "off":
+                                new_income = decile_income * (1 + cagr)
+
+                     
                         # set the new income
                         setattr(self, f'decile{decile_num}_abs', new_income)
 

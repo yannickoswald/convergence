@@ -466,18 +466,18 @@ class Plots():
         # also plot a vertical line at x=0
         ax.axvline(0, color='black', lw=1, alpha=0.5)
         # also plot a vertical line at x=0
-        ax.set_xlabel('national cagr 2012-2022')
-        ax.set_ylabel('national growth model scen.')
+        ax.set_xlabel('national cagr 2012-2022 GDP pc ($2017 PPP)')
+        ax.set_ylabel('national cagr scen. hh income pc ($2017 PPP)')
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1), frameon=False)
         ax.margins(0)
         # shade the region where x > 0 and y > 0 yellow
-        ax.fill_between([0, max_val], 0, max_val, color='yellow', alpha=0.1)
+        #ax.fill_between([0, max_val], 0, max_val, color='yellow', alpha=0.1)
         # shade the region where x < 0 and y > 0 gree
-        ax.fill_between([min_val, 0], 0, max_val, color='green', alpha=0.1)
+        #ax.fill_between([min_val, 0], 0, max_val, color='green', alpha=0.1)
         # shade the region where x > 0 and y < 0 red
-        ax.fill_between([0, max_val], min_val, 0, color='red', alpha=0.1)
+        #ax.fill_between([0, max_val], min_val, 0, color='red', alpha=0.1)
         # shade the region where x < 0 and y < 0 blue
-        ax.fill_between([min_val, 0], min_val, 0, color='blue', alpha=0.1)
+        #ax.fill_between([min_val, 0], min_val, 0, color='blue', alpha=0.1)
         # Dynamically get axis limits
         xlim = ax.get_xlim()
         ylim = ax.get_ylim()

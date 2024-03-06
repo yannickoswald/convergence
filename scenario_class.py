@@ -36,6 +36,7 @@ class Scenario():
         self.end_year = scenario_params["end_year"]
         self.income_goal = scenario_params["income_goal"]
         self.carbon_budget = scenario_params["carbon_budget"]
+        self.hysteresis_tech_progress = scenario_params["hysteresis_tech_progress"]
 
         # Load the country data
         self.raw_data = self.load_country_data()
@@ -47,6 +48,8 @@ class Scenario():
         self.pop_growth_assumption = self.validate_assumption(scenario_params, "pop_growth_assumption", ["UN_medium", "semi_log_model", "semi_log_model_elasticity"])
         self.tech_evolution_assumption = self.validate_assumption(scenario_params, "tech_evolution_assumption", ["plausible", "necessary"])
         self.tech_hysteresis_assumption = self.validate_assumption(scenario_params, "tech_hysteresis_assumption", ["on", "off"])
+        self.steady_state_high_income_assumption = self.validate_assumption(scenario_params, "steady_state_high_income_assumption", ["on", "off", "on_with_growth"])
+        
 
     @staticmethod 
     def validate_assumption(params, key, valid_values):
