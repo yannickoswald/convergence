@@ -37,11 +37,13 @@ class Scenario():
         self.income_goal = scenario_params["income_goal"]
         self.carbon_budget = scenario_params["carbon_budget"]
         self.hysteresis_tech_progress = scenario_params["hysteresis_tech_progress"]
-
+    
         # Load the country data
         self.raw_data = self.load_country_data()
         self.countries = self.initialize_countries()  # Use self since this method now belongs to the class
         self.population_growth_rates = self.load_population_growth_rates()
+        self.linear_yearly_carbon_budget = self.compute_linear_carbon_budget_pathway() # this outputs a tuple (years, emissions)
+        self.total_population = self.compute_current_global_population() # this is the total population in the current year
 
         # Check on key model assumptions
         self.gdp_assumption = self.validate_assumption(scenario_params, "gdp_assumption", ["constant_ratio", "model_ratio"])
@@ -313,6 +315,37 @@ class Scenario():
         self.compute_average_growth_rates() # compute the average growth rates for each country
 
 
+    def sum_cumulative_emissions(self):
+        
+        """
+        Description: 
+                Sum the cumulative emissions for all countries over time in a given scenario
+        Parameters:
+                None
+        """
+
+        cumulative_emissions = 0
+        for country in self.countries.values():
+                # sum the emissions trajectory for each country and add to cumulative emissions
+                cumulative_emissions += sum(country.emissions_trajectory.values())
+        return cumulative_emissions
+    
+    
+    def compute_current_global_population(self):
+        
+        """
+        Description: 
+                Compute the current global population in the current year. So this needs to be recalculated every year.
+        Parameters:
+                None
+        """
+        # sum the population in a loop over all countries
+        global_population = 0
+        for country in self.countries.values():
+                global_population += country.population
+        return global_population
+    
+
     def step(self):
             
         """
@@ -328,7 +361,9 @@ class Scenario():
                 country.economic_growth()
                 country.population_growth()
                 country.update_emissions()
+                country.calculate_current_carbon_budget()
                 country.year += 1 # increase the year by one
+
 
     def run(self):
 
@@ -346,20 +381,3 @@ class Scenario():
             self.step()
 
 
-    def sum_cumulative_emissions(self):
-        
-        """
-        Description: 
-                Sum the cumulative emissions for all countries over time in a given scenario
-        Parameters:
-                None
-        """
-
-        cumulative_emissions = 0
-        for country in self.countries.values():
-                # sum the emissions trajectory for each country and add to cumulative emissions
-                cumulative_emissions += sum(country.emissions_trajectory.values())
-        return cumulative_emissions
-    
-   
-       

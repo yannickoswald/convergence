@@ -43,6 +43,7 @@ class Country():
                 self.cagr_by_decile = {}  # Necessary for convergence growth rates in scenario method
                 self.cagr_average = None # Necessary for AVERAGE country convergence growth rate in scenario method (so for the country as a whole it is not literally the average of decile growth rates)
                 self.pop_growth_rate = None # Necessary for population growth rate in case the assumption needs to dynamically change this for instane in the semi_log_model case of population growth
+                self.carbon_budget_per_current_year = None # Necessary for the carbon budget of the country in the current year
 
                 # Initialize dictionaries for the country's trajectories which is necessary data to be collected for plotting.
                 self.income_hh_trajectory = {}  # Necessary for plotting the trajectory of the countrys
@@ -51,6 +52,8 @@ class Country():
                 self.population_trajectory = {}  # Necessary for plotting the trajectory of the countrys population
                 self.carbon_intensity_trajectory = {}  # This is the (future) historical trajectory of the carbon intensity of the country
                 self.emissions_trajectory = {}  # This is the (future) historical trajectory of the emissions of the country
+                self.carbon_emissions_pc_trajectory = {}  # This is the (future) historical trajectory of the carbon emissions per capita of the country        
+
 
                 # Dictionary mapping kwargs names to class attribute names
                 attribute_mapping = {
@@ -92,6 +95,19 @@ class Country():
                                 setattr(self, f'country_{key}', value)
 
 
+                # set 2022 values of trajectory dictionaries with the initial values
+                self.income_hh_trajectory[self.year] = self.hh_mean*365 # this is the mean household cons.income
+                self.gdppc_trajectory[self.year] = self.gdp_pc # this is the mean gross domestic product per capita
+                self.population_trajectory[self.year] = self.population # this is the population
+                self.carbon_intensity_trajectory[self.year] = self.carbon_intensity # this is the carbon intensity of the country
+                self.emissions_trajectory[self.year] = self.carbon_intensity * self.gdp_pc * self.population / 1000 # this is the emissions of the country, divide by 1000 to get to metric tons from kg
+                self.carbon_emissions_pc_trajectory[self.year] = self.carbon_intensity/1000 * self.gdp_pc # this is the carbon emissions per capita of the country in tonnes
+
+
+                # set more variables necessary to compute the country carbon budget consistent behaviour
+                self.diff_budget_and_emissions = None
+                self.diff_budget_and_emissions_ratio = None
+
         def save_current_state(self):
 
                 """
@@ -114,6 +130,7 @@ class Country():
                 self.population_trajectory[self.year] = self.population # this is the population
                 self.carbon_intensity_trajectory[self.year] = self.carbon_intensity # this is the carbon intensity of the country
                 self.emissions_trajectory[self.year] = self.carbon_intensity * self.gdp_pc * self.population / 1000 # this is the emissions of the country, divide by 1000 to get to metric tons from kg
+                self.carbon_emissions_pc_trajectory[self.year] = self.carbon_intensity/1000 * self.gdp_pc # this is the carbon emissions per capita of the country in tonnes
 
                 # add and save current decile incomes to the decile trajectories where every decile in the dictionary is another dictionary with the years as keys and the decile incomes as values
                 for decile_num in range(1, 11):
@@ -156,7 +173,30 @@ class Country():
                                         self.carbon_intensity = self.carbon_intensity * (1 + modelled_trend)
                         
                 elif self.scenario.tech_evolution_assumption == "necessary":
-                        pass
+                        # generally here we will calculate the necessary carbon intensity reduction rate to stay within the country specific allocated carbon budget
+                        # store the variable self.diff_budget_and_emissions_percentage in a local variable
+                        self.calculate_diff_budget_and_emissions() ## execute the method to calculate the difference between the carbon budget and the emissions of the country in the current year
+                        ###################################################################################
+                        ######## USE A simple IPAT framework to calculate the new carbon intensity ########
+                        ###################################################################################
+                        # the IPAT framework is I = P * A * T where I is the impact, P is the population, A is the affluence and T is the technology
+                        # we want to calculate the new technology T to stay within the carbon budget
+                        # we assume the population stays constant and the affluence stays constant so we only need to calculate the new technology
+                        # we just must rearrange the formula to T = I_new / (P * A) and use the new I which is the carbon budget adjusted for the self.diff_budget_and_emissions_percentage
+
+                        # check though first whether the country is already within its carbon budget, a ratio of 1 or less means it is within the budget
+                        if self.diff_budget_and_emissions_ratio < 1:
+                                 modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
+                                 self.carbon_intensity = self.carbon_intensity * (1 + modelled_trend)
+                        else:
+                                # if the country is not within its carbon budget then we calculate the new carbon intensity
+                                # one must take the inverse of the ratio to get the necessary reduction in emissions to stay within the budget i.e. 1/self.diff_budget_and_emissions_ratio
+                                if self.code == "USA":
+                                        print("this is the inverse ratio", 1/self.diff_budget_and_emissions_ratio)
+                                        print("this is the carbon intensity calculated from the IPAT framework of",self.code," ", (self.total_emissions * (1/self.diff_budget_and_emissions_ratio)) / (self.gdp_pc * self.population)*1000)
+                                self.carbon_intensity = (self.total_emissions * (1/self.diff_budget_and_emissions_ratio)) / (self.gdp_pc * self.population) * 1000 # this is the emissions of the country, multiplied by 1000 to get to kg co2 per $ from metric tons co2 per $
+                        
+
                 
         def update_emissions(self):
 
@@ -293,9 +333,55 @@ class Country():
                                 new_population = self.population * (1 + self.pop_growth_rate)
                                 self.population = new_population
                                 
-                        
+        def calculate_current_carbon_budget(self):
 
+                """
+                Description: 
+                        A method computing the carbon budget of the country in the current year. 
+
+                Parameters:
+                        None
+
+                """
+                # this is the carbon budget of the country in the current year
+                years, emissions = self.scenario.linear_yearly_carbon_budget
+                # round down the years to their nearest integer and add 2022 to every one of them
+                years = [int(np.floor(year)) + 2022 for year in years]
+                # transform to dictionary for better handling
+                z = dict(zip(years, emissions))
+                # print z
+                #print("this is z ", z)
+                # check first whether current year is in the dictionary
+                if self.year in z:
+                        global_current_budget = z[self.year]
+                        fair_share_budget = global_current_budget * (self.population / self.scenario.total_population)
+                else:
+                        fair_share_budget = 0
+                self.carbon_budget_per_current_year = fair_share_budget
+                #print("this is the carbon budget per current year of ", self.code, " ", self.carbon_budget_per_current_year)
+
+
+        def calculate_diff_budget_and_emissions(self):
+                        
+                        """
+                        Description: 
+                                A method computing the difference between the carbon budget and the emissions of the country in the current year. And gives
+                                out the necessary percentage reduction in emissions to reach the carbon budget for the given year. 
         
+                        Parameters:
+                                None
+        
+                        """
+                        if self.code == "USA": 
+                                print("this is the total emissions of ", self.code, " ", self.total_emissions)
+                        self.calculate_current_carbon_budget()
+                        if self.code == "USA": 
+                                print("this is the current budget of ", self.code, " ", self.carbon_budget_per_current_year*1e9)
+                        self.diff_budget_and_emissions = self.carbon_budget_per_current_year * 1e9 - self.total_emissions # make units the same in tonnes so carbon budgets need to be in tonnes from gigatonnes 
+                        self.diff_budget_and_emissions_ratio = (self.total_emissions / (self.carbon_budget_per_current_year*1e9))  # make units the same in tonnes so carbon budgets need to be in tonnes from gigatonnes 
+                        if self.code == "USA":
+                                print("this is the ratio of emissions to budget of ", self.code, " ", self.diff_budget_and_emissions_ratio)
+
         def __repr__(self): # This is the string representation of the object
                 # Retrieve the dynamic attributes by removing the 'country_' prefix and format them.
                 attributes = [f"{key.split('country_')[1]}: {getattr(self, key)}" for key in self.__dict__ if key.startswith('country_')]

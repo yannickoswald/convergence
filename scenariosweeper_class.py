@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from scenario_class import Scenario
 import numpy as np
 from matplotlib.ticker import FuncFormatter
+import matplotlib.colors as mcolors
 
 class ScenarioSweeper:
     
@@ -156,11 +157,48 @@ class ScenarioSweeper:
             y_index = y_values.index(params_dict[variables_considered[1]])
             Z[y_index, x_index] = value
 
-        # Initialize an empty dictionary for contourf arguments
+
+        
+        # Define color ranges for values below and above the threshold
+        colors_below = ['#4575b4', '#91bfdb']  # Blue shades for values below 1
+        colors_above = ['#fdae61', '#d73027']  # Orange-red shades for values above 1
+
+
+        # Function to combine both color maps with a threshold
+        def combine_cmaps(cmap_below, cmap_above, threshold, data):
+            # Create a new colormap that transitions at the threshold
+            # Determine the proportion of the threshold within the data range
+            min_val, max_val = np.min(data), np.max(data)
+            threshold_norm = (threshold - min_val) / (max_val - min_val)
+            print("this is the threshold_norm", threshold_norm)
+            
+
+            # Generate colors for each part
+            below_colors = cmap_below(np.linspace(0, 1, int(256 * threshold_norm)))
+            above_colors = cmap_above(np.linspace(0, 1, 256 - int(256 * threshold_norm)))
+            print("this is the below_colors", below_colors)
+            print("this is the above_colors", above_colors)
+            
+            # Combine colors at the threshold
+            all_colors = np.vstack((below_colors, above_colors))
+            combined_cmap = mcolors.LinearSegmentedColormap.from_list('combined_cmap', all_colors)
+            
+            return combined_cmap
+
+        # Create linear segmented colormaps for values below and above the threshold
+        cmap_below = mcolors.LinearSegmentedColormap.from_list("below", colors_below)
+        cmap_above = mcolors.LinearSegmentedColormap.from_list("above", colors_above)
+
+        # Combine the color maps with a threshold at 1
+        combined_cmap = combine_cmaps(cmap_below, cmap_above, 1, Z)
+        print("this is the combined_cmap", combined_cmap)
+
+        # Initialize contour plot arguments with the custom colormap and normalization
         contourf_kwargs = {
-            "levels": 15,
-            "cmap": 'inferno'
+            "levels": 50,  # More levels for a smoother transition
+            "cmap": combined_cmap
         }
+
         # Conditionally add vmin and vmax to the arguments
         if fixed_color_scale:
             contourf_kwargs["vmin"] = 0  # Minimum value of Z for the color scale
@@ -176,6 +214,8 @@ class ScenarioSweeper:
         if colorscaleon:
             colorbar = fig.colorbar(contour, ax=ax)
             colorbar.set_label(f'Ratio of cumulative global emissions to 2\u00B0C budget', rotation=270, labelpad=15, fontsize=8)
+            # Set the colorbar's tick labels to predefined values
+            #colorbar.set_ticks([0.5, 1, 1.5, 2])  # Predefined tick values ## needs to be activated for figure 3 and deactivated for figure 4
         ax.set_xlabel(name_mapping[variables_considered[0]])
         ax.set_ylabel(name_mapping[variables_considered[1]])
         ax.set_xticks(x_values)
@@ -188,7 +228,15 @@ class ScenarioSweeper:
         ############ ANNONTATIONS ############
         # Demarcate line where the ratio equals 1
         contour_line = ax.contour(X, Y, Z, levels=[1], colors='white', linestyles='dashed')
-        ax.clabel(contour_line, fmt=f'Within 2\u00B0C', inline=True, fontsize=8)
+        def custom_fmt(x):
+            return '2°C 67%'
+        ax.clabel(contour_line, fmt=custom_fmt, inline=True, fontsize=8)
+
+        # Demarcate line where the ratio equals 1.1858190709 2 degree budget with 50% 
+        contour_line = ax.contour(X, Y, Z, levels=[1.1858190709], colors='white', linestyles='dashed')
+        def custom_fmt2(x):
+            return '2°C 50%'
+        ax.clabel(contour_line, fmt=custom_fmt2, inline=True, fontsize=8)
 
         ######## add extracted growth rates feasible regions lines
         # Plotting the lines for level 0
@@ -197,7 +245,7 @@ class ScenarioSweeper:
                             [2078.19032277, 7107.60378143],
                             [2081.80967737, 7108.11988921],
                             [2100., 7109.81960993]])
-        ax.plot(coords_0[:, 0], coords_0[:, 1], 'c--', label='0%')  # 'w--' for white dashed line
+        ax.plot(coords_0[:, 0], coords_0[:, 1], color = "cyan", linestyle = '--', label='0%')  # 'w--' for white dashed line
 
         ######## additional annotations that should be only introduced for figure 3 but not figure 4  ########
         if annotations_plot:
@@ -210,7 +258,7 @@ class ScenarioSweeper:
                                 [2058.02526381, 25748.84170682],
                                 [2060., 29776.31871013],
                                 [2060.31708066, 30000.]])
-            ax.plot(coords_004[:, 0], coords_004[:, 1], 'c--', label='4%')  # 'w--' for white dashed line
+            ax.plot(coords_004[:, 0], coords_004[:, 1], color = "cyan", linestyle = '--', label='4%')  # 'w--' for white dashed line
 
             # Annotate for the year 2100 and income goal 20000
             try:
@@ -298,7 +346,7 @@ class ScenarioSweeper:
                 fig, ax = plt.subplots(figsize=(10, 6))
             else:
                 fig = ax.get_figure()
-            contour = ax.contourf(X, Y, Z, levels=15, cmap='inferno')
+            contour = ax.contourf(X, Y, Z, levels=50, cmap='inferno')
             
             # Format colorbar labels as percentages
             def to_percentage(x, pos):
@@ -384,10 +432,7 @@ class ScenarioSweeper:
             if ax is None:
                 # Return figure and axes for external use
                 return fig, ax
-            
-
-          
-                
+              
 
     def plot_growth_vs_decarbonization_rates(self):
         pass
