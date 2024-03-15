@@ -356,13 +356,13 @@ class Scenario():
         """
         
         for country in self.countries.values():
-                country.save_current_state()
                 country.technological_change()
                 country.economic_growth()
                 country.population_growth()
                 country.update_emissions()
                 country.calculate_current_carbon_budget()
                 country.year += 1 # increase the year by one
+                country.save_current_state() # save the current state of the country
 
 
     def run(self):

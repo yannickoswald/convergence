@@ -195,7 +195,7 @@ class ScenarioSweeper:
 
         # Initialize contour plot arguments with the custom colormap and normalization
         contourf_kwargs = {
-            "levels": 50,  # More levels for a smoother transition
+            "levels": 200,  # More levels for a smoother transition
             "cmap": combined_cmap
         }
 
@@ -274,7 +274,7 @@ class ScenarioSweeper:
             except ValueError:
                 print("Specified year or income goal not found in the dataset for the 2100 scenario.")
 
-            # Annotate for the year 2050 and income goal 9100
+            # Annotate for the year 2050 and income goal 9100 or rather 10000
             try:
                 x_pos_2050 = x_values.index(2060)
                 y_pos_9100 = y_values.index(10000)
