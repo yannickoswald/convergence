@@ -156,13 +156,10 @@ class ScenarioSweeper:
             x_index = x_values.index(params_dict[variables_considered[0]])
             y_index = y_values.index(params_dict[variables_considered[1]])
             Z[y_index, x_index] = value
-
-
         
         # Define color ranges for values below and above the threshold
         colors_below = ['#4575b4', '#91bfdb']  # Blue shades for values below 1
         colors_above = ['#fdae61', '#d73027']  # Orange-red shades for values above 1
-
 
         # Function to combine both color maps with a threshold
         def combine_cmaps(cmap_below, cmap_above, threshold, data):
@@ -184,6 +181,10 @@ class ScenarioSweeper:
             combined_cmap = mcolors.LinearSegmentedColormap.from_list('combined_cmap', all_colors)
             
             return combined_cmap
+        
+
+      
+
 
         # Create linear segmented colormaps for values below and above the threshold
         cmap_below = mcolors.LinearSegmentedColormap.from_list("below", colors_below)
@@ -191,8 +192,7 @@ class ScenarioSweeper:
 
         # Combine the color maps with a threshold at 1
         combined_cmap = combine_cmaps(cmap_below, cmap_above, 1, Z)
-        print("this is the combined_cmap", combined_cmap)
-
+        #print("this is the combined_cmap", combined_cmap)
         # Initialize contour plot arguments with the custom colormap and normalization
         contourf_kwargs = {
             "levels": 200,  # More levels for a smoother transition
@@ -200,10 +200,9 @@ class ScenarioSweeper:
         }
 
         # Conditionally add vmin and vmax to the arguments
-        if fixed_color_scale:
-            contourf_kwargs["vmin"] = 0  # Minimum value of Z for the color scale
-            contourf_kwargs["vmax"] = 2.5  # Maximum value of Z for the color scale
-
+        #if fixed_color_scale:
+         #   contourf_kwargs["vmin"] = 0  # Minimum value of Z for the color scale
+         #   contourf_kwargs["vmax"] = 2.5  # Maximum value of Z for the color scale
         # Create figure and axes for plotting
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 6))
@@ -238,18 +237,26 @@ class ScenarioSweeper:
             return '2°C 50%'
         ax.clabel(contour_line, fmt=custom_fmt2, inline=True, fontsize=8)
 
-        ######## add extracted growth rates feasible regions lines
-        # Plotting the lines for level 0
-        coords_0 = np.array([[2040., 7091.76725433],
-                            [2060., 7104.1157445],
-                            [2078.19032277, 7107.60378143],
-                            [2081.80967737, 7108.11988921],
-                            [2100., 7109.81960993]])
-        ax.plot(coords_0[:, 0], coords_0[:, 1], color = "cyan", linestyle = '--', label='0%')  # 'w--' for white dashed line
+        # Demarcate line where the ratio equals ROUGHLY 2100/(1150*0.95 - 2*35) = 2.05378973105 for 50% chance to stay below 2.5 degree based on https://www.nature.com/articles/s41558-023-01848-5 fig.4 c
+        contour_line = ax.contour(X, Y, Z, levels=[2.05378973105], colors='white', linestyles='dashed')
+        def custom_fmt2(x):
+            return '2.5°C 50%'
+        ax.clabel(contour_line, fmt=custom_fmt2, inline=True, fontsize=8)
+
+     
 
         ######## additional annotations that should be only introduced for figure 3 but not figure 4  ########
         if annotations_plot:
-         
+
+               ######## add extracted growth rates feasible regions lines
+            # Plotting the lines for level 0
+            coords_0 = np.array([[2040., 7091.76725433],
+                                [2060., 7104.1157445],
+                                [2078.19032277, 7107.60378143],
+                                [2081.80967737, 7108.11988921],
+                                [2100., 7109.81960993]])
+            ax.plot(coords_0[:, 0], coords_0[:, 1], color = "cyan", linestyle = '--', label='0%')  # 'w--' for white dashed line
+            
             # Plotting the lines for level 0.04
             coords_004 = np.array([[2040., 13763.74664383],
                                 [2044.7325622, 15000.],
@@ -270,7 +277,7 @@ class ScenarioSweeper:
                 # Annotate the point with a marker
                 ax.scatter(x_coord_2100, y_coord_20000, color='red', s=100, zorder=5)
                 # Annotate with text and a straight line pointing to the point
-                ax.annotate("2100 Denmark scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-80,-20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='black')
+                ax.annotate("2100\n Denmark\n scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-30, 40), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
             except ValueError:
                 print("Specified year or income goal not found in the dataset for the 2100 scenario.")
 
@@ -409,7 +416,7 @@ class ScenarioSweeper:
                 ax.scatter(x_coord_2100, y_coord_20000, color='red', s=100, zorder=5)
 
                 # Annotate with text and a straight line pointing to the point
-                ax.annotate("2100 Denmark scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-80,-20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='black')
+                ax.annotate("2100 Denmark scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-80,-20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
             except ValueError:
                 print("Specified year or income goal not found in the dataset for the 2100 scenario.")
 
