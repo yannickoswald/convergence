@@ -149,33 +149,70 @@ class Country():
                         None
 
                 """
+                # Define subprocedures for the sigmoidal function and the weighted average to compute a model of technological change
+
+                def sigmoid(t, k=0.1, t0=50):
+                        """
+                        Sigmoid function for calculating the weight w(t).
+                        
+                        Parameters:
+                        - t: The time variable.
+                        - k: Steepness of the curve.
+                        - t0: Midpoint of the sigmoid, where w(t) = 0.5.
+                        """
+                        return 1 / (1 + np.exp(-k * (t - t0)))
+
+                def weighted_average(t, y, z, k=0.1, t0=50):
+                        """
+                        Calculates the weighted average of y and z over time using a sigmoidal function for weights.
+                        
+                        Parameters:
+                        - t: Time variable, can be a scalar or a numpy array.
+                        - y: The y variable.
+                        - z: The z variable.
+                        - k, t0: Parameters for the sigmoid function.
+                        """
+                        w = sigmoid(t, k, t0)
+                        return (1 - w) * y + w * z
 
                 # DIFFERENTIATE TECHNOLOGICAL CHANGE ASSUMPTIONS
                 #################################################
-                if self.scenario.tech_evolution_assumption == "plausible":
-                        # for the first ten years assume the ongoing trend in carbon intensity from 2010 to 2020
-                        if self.year < 2032:
-                                self.carbon_intensity = self.carbon_intensity * (1 + self.carbon_intensity_trend)
-                        # after that assume a constant the logarithmic model empirically determined via cross country data gdppc 2022 vs trend 2010 2020
-                        # which is this equation y = -0.015ln(x) + 0.1309 where x is the gdp per capita in 2022 and y is the trend in carbon intensity from 2010 to 2020
-                        else:   
-                                # distinguish between the two cases of country that grows or degrows its average gdp per capita and hence introduce hysteresis in the technological change
-                                if self.scenario.tech_hysteresis_assumption == "on":
-                                        if self.cagr_average > 0:
-                                                modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
-                                                self.carbon_intensity = self.carbon_intensity * (1 + modelled_trend)
-                                        else:
-                                                # distinguish between the two cases of country that assumes under degrowth we still have the same carbon intensity trend as before or we assume constant technology
-                                                self.carbon_intensity = self.carbon_intensity * (1 - self.scenario.hysteresis_tech_progress) # assume a low progress in technology under planned degrowth i.e. -1% per year
+                #if self.scenario.tech_evolution_assumption == "plausible":
+                # for the first ten years assume the ongoing trend in carbon intensity from 2010 to 2020
+                if self.year < 2025:
+                        self.carbon_intensity = self.carbon_intensity * (1 + self.carbon_intensity_trend)
+                # after that assume a constant the logarithmic model empirically determined via cross country data gdppc 2022 vs trend 2010 2020
+                # which is this equation y = -0.015ln(x) + 0.1309 where x is the gdp per capita in 2022 and y is the trend in carbon intensity from 2010 to 2020
+                else:   
+                        # distinguish between the two cases of country that grows or degrows its average gdp per capita and hence introduce hysteresis in the technological change
+                        if self.scenario.tech_hysteresis_assumption == "on":
 
-                                elif self.scenario.tech_hysteresis_assumption == "off":
+                                if self.cagr_average > 0:
+
                                         modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
-                                        self.carbon_intensity = self.carbon_intensity * (1 + modelled_trend)
+                                        z = self.scenario.final_improvement_rate ## this is a constant  uniform value for the carbon intensity decline that the world adopts slowly and then rapidly.
+                                        k = self.scenario.k # this is the steepness of the sigmoidal function
+                                        t0 = self.scenario.t0 # this is the midpoint of the sigmoidal function
+                                        weighted_model = weighted_average(self.year, modelled_trend, z,  k=k, t0=t0)
+                                        self.carbon_intensity = self.carbon_intensity * (1 + weighted_model)
+                                else:
+                                        # if the country is in a planned degrowth scenario then assume the fixed progress in technology i.e. -1% per year already from the start
+                                        #assume progress in technology under planned degrowth i.e. -1% per year
+                                        self.carbon_intensity = self.carbon_intensity * (1 + self.scenario.final_improvement_rate) # CAREFUL RATE GIVEN IS NEGATIVE so + operator leads to multiplier < 1
+
+                        elif self.scenario.tech_hysteresis_assumption == "off":
+
+                                modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
+                                z = self.scenario.final_improvement_rate ## this is a constant  uniform value for the carbon intensity decline that the world adopts slowly and then rapidly.
+                                k = self.scenario.k # this is the steepness of the sigmoidal function
+                                t0 = self.scenario.t0 # this is the midpoint of the sigmoidal function
+                                weighted_model = weighted_average(self.year, modelled_trend, z,  k=k, t0=t0)
+                                self.carbon_intensity = self.carbon_intensity * (1 + weighted_model)
                         
-                elif self.scenario.tech_evolution_assumption == "necessary":
+                #elif self.scenario.tech_evolution_assumption == "necessary":
                         # generally here we will calculate the necessary carbon intensity reduction rate to stay within the country specific allocated carbon budget
                         # store the variable self.diff_budget_and_emissions_percentage in a local variable
-                        self.calculate_diff_budget_and_emissions() ## execute the method to calculate the difference between the carbon budget and the emissions of the country in the current year
+                        #self.calculate_diff_budget_and_emissions() ## execute the method to calculate the difference between the carbon budget and the emissions of the country in the current year
                         ###################################################################################
                         ######## USE A simple IPAT framework to calculate the new carbon intensity ########
                         ###################################################################################
@@ -185,16 +222,16 @@ class Country():
                         # we just must rearrange the formula to T = I_new / (P * A) and use the new I which is the carbon budget adjusted for the self.diff_budget_and_emissions_percentage
 
                         # check though first whether the country is already within its carbon budget, a ratio of 1 or less means it is within the budget
-                        if self.diff_budget_and_emissions_ratio < 1:
-                                 modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
-                                 self.carbon_intensity = self.carbon_intensity * (1 + modelled_trend)
-                        else:
+                        #if self.diff_budget_and_emissions_ratio < 1:
+                         #        modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
+                          #       self.carbon_intensity = self.carbon_intensity * (1 + modelled_trend)
+                       #else:
                                 # if the country is not within its carbon budget then we calculate the new carbon intensity
                                 # one must take the inverse of the ratio to get the necessary reduction in emissions to stay within the budget i.e. 1/self.diff_budget_and_emissions_ratio
-                                if self.code == "USA":
-                                        print("this is the inverse ratio", 1/self.diff_budget_and_emissions_ratio)
-                                        print("this is the carbon intensity calculated from the IPAT framework of",self.code," ", (self.total_emissions * (1/self.diff_budget_and_emissions_ratio)) / (self.gdp_pc * self.population)*1000)
-                                self.carbon_intensity = (self.total_emissions * (1/self.diff_budget_and_emissions_ratio)) / (self.gdp_pc * self.population) * 1000 # this is the emissions of the country, multiplied by 1000 to get to kg co2 per $ from metric tons co2 per $
+                        #        if self.code == "USA":
+                          #              print("this is the inverse ratio", 1/self.diff_budget_and_emissions_ratio)
+                         #               print("this is the carbon intensity calculated from the IPAT framework of",self.code," ", (self.total_emissions * (1/self.diff_budget_and_emissions_ratio)) / (self.gdp_pc * self.population)*1000)
+                           #     self.carbon_intensity = (self.total_emissions * (1/self.diff_budget_and_emissions_ratio)) / (self.gdp_pc * self.population) * 1000 # this is the emissions of the country, multiplied by 1000 to get to kg co2 per $ from metric tons co2 per $
                         
 
                 

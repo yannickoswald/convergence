@@ -25,7 +25,9 @@ class ScenarioSweeper:
                        pop_growth_assumption_values,
                        tech_evolution_assumption_values,
                        tech_hysteresis_assumption_values,
-                       steady_state_high_income_assumption_values):
+                       steady_state_high_income_assumption_values,
+                       sigmoid_parameters_values,
+                       final_improvement_rate):
 
         """
         Description: 
@@ -44,6 +46,10 @@ class ScenarioSweeper:
         self.tech_evolution_assumption_values = tech_evolution_assumption_values # Assume two different technological evolution rates
         self.tech_hysteresis_assumption_values = tech_hysteresis_assumption_values # Assume two different technological hysteresis rates    
         self.steady_state_high_income_assumption_values = steady_state_high_income_assumption_values # Assume two different steady state high income assumptions
+    
+        self.sigmoid_parameters_values = sigmoid_parameters_values
+        self.final_improvement_rate = final_improvement_rate
+        
         # store emissions for each scenario in a dictionary where the key is the scenario specified via the params and the value is the total emissions
         self.total_emissions = {}
         # store the global average growth rate for each scenario in a dictionary where the key is the scenario specified via the params and the value is the global average growth rate
@@ -65,6 +71,10 @@ class ScenarioSweeper:
         tech_evolution_assumption = self.tech_evolution_assumption_values[0]  # this will be just one value in this iteration but for consistency and generality we loop over all the given values
         steady_state_high_income_assumption = self.steady_state_high_income_assumption_values[0]  # this will be just one value in this iteration but for consistency and generality we loop over all the given values  
 
+        sigmoid_parameters = self.sigmoid_parameters_values  # this will be just one value in this iteration but for consistency and generality we loop over all the given values
+        final_improvement_rate = self.final_improvement_rate  # this will be just one value in this iteration but for consistency and generality we loop over all the given values
+        
+        
         # Iterate over all possible combinations of variable parameter values
         for hysteresis_tech_progress in self.hysteresis_tech_progress_values: # this will be perhaps many values
             for carbon_budget in self.carbon_budget_values: # this will be perhaps many values
@@ -80,7 +90,10 @@ class ScenarioSweeper:
                             "pop_growth_assumption": pop_growth_assumption,
                             "tech_evolution_assumption": tech_evolution_assumption,
                             "tech_hysteresis_assumption": tech_hysteresis_assumption,
-                            "steady_state_high_income_assumption": steady_state_high_income_assumption
+                            "steady_state_high_income_assumption": steady_state_high_income_assumption,
+                            "k": sigmoid_parameters[0],
+                            "t0": sigmoid_parameters[1],
+                            "final_improvement_rate": final_improvement_rate
                         }
                         
                         scenario = self.create_scenario(scenario_params)
@@ -149,6 +162,9 @@ class ScenarioSweeper:
         X, Y = np.meshgrid(x_values, y_values)
         # Initialize a 2D array for emissions data
         Z = np.zeros(X.shape)
+        print("this is the Z", Z)
+        print("this is the X", X)
+        print("this is the Y", Y)
 
         # Populate the Z array with total emissions data
         for key, value in dependent_var.items():
@@ -167,14 +183,14 @@ class ScenarioSweeper:
             # Determine the proportion of the threshold within the data range
             min_val, max_val = np.min(data), np.max(data)
             threshold_norm = (threshold - min_val) / (max_val - min_val)
-            print("this is the threshold_norm", threshold_norm)
+            #print("this is the threshold_norm", threshold_norm)
             
 
             # Generate colors for each part
             below_colors = cmap_below(np.linspace(0, 1, int(256 * threshold_norm)))
             above_colors = cmap_above(np.linspace(0, 1, 256 - int(256 * threshold_norm)))
-            print("this is the below_colors", below_colors)
-            print("this is the above_colors", above_colors)
+            #print("this is the below_colors", below_colors)
+            #print("this is the above_colors", above_colors)
             
             # Combine colors at the threshold
             all_colors = np.vstack((below_colors, above_colors))
@@ -190,10 +206,14 @@ class ScenarioSweeper:
         cmap_below = mcolors.LinearSegmentedColormap.from_list("below", colors_below)
         cmap_above = mcolors.LinearSegmentedColormap.from_list("above", colors_above)
 
+        print("this is the cmap_below", cmap_below)
+        print("this is the cmap_above", cmap_above)
+
         # Combine the color maps with a threshold at 1
         combined_cmap = combine_cmaps(cmap_below, cmap_above, 1, Z)
         #print("this is the combined_cmap", combined_cmap)
         # Initialize contour plot arguments with the custom colormap and normalization
+        print("this is combined_cmap", combined_cmap)
         contourf_kwargs = {
             "levels": 200,  # More levels for a smoother transition
             "cmap": combined_cmap
@@ -248,6 +268,23 @@ class ScenarioSweeper:
         ######## additional annotations that should be only introduced for figure 3 but not figure 4  ########
         if annotations_plot:
 
+            # Annotate for the z, level, value for the year 2100 and income goal 20000
+            # After defining the Z array and before the other annotations...
+
+            try:
+                # Step 1: Find the indices for x = 2100 and y = 20000
+                x_pos = x_values.index(2100)
+                y_pos = y_values.index(20000)
+
+                # Step 2: Use these indices to find the Z value
+                z_value = Z[y_pos, x_pos]
+
+                # Step 3: Annotate this Z value on the plot
+                ax.scatter(x_values[x_pos], y_values[y_pos], color='red', s=100, zorder=5)  # Mark the point
+                ax.annotate(f"Overshoot {z_value:.2f}", (x_values[x_pos], y_values[y_pos]), textcoords="offset points", xytext=(-40, 0), ha='center', fontsize=8, arrowprops=dict(arrowstyle="-", color='black'))
+            except ValueError as e:
+                print("Specified point (2100, 20000) not found in the dataset.")
+
                ######## add extracted growth rates feasible regions lines
             # Plotting the lines for level 0
             coords_0 = np.array([[2040., 7091.76725433],
@@ -291,7 +328,7 @@ class ScenarioSweeper:
                 # Annotate the point with a marker
                 ax.scatter(x_coord_2050, y_coord_9100, color='blue', s=100, zorder=5)  # Use a different color for distinction
                 # Annotate with text and a straight line pointing to the point
-                ax.annotate("2060\nCosta Rica\nscenario", (x_coord_2050, y_coord_9100), textcoords="offset points", xytext=(40,15), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
+                ax.annotate("2060\nCosta Rica\nscenario", (x_coord_2050, y_coord_9100), textcoords="offset points", xytext=(45,20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
             except ValueError:
                 print("Specified year or income goal not found in the dataset for the 2060 scenario.")
 

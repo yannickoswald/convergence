@@ -591,6 +591,9 @@ class Plots():
             plt.tight_layout()
             plt.show()
 
+        #print(type(sorted_carbon_intensity_trajectory))  # Debug line to check type
+        return sorted_carbon_intensity_trajectory
+
 
 
 
