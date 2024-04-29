@@ -337,9 +337,36 @@ class Country():
                         # in this case we start from the empirical population growth rate in 2022 and then apply the semi log model equation for population growth change rate
                         # for the future years apply the semi log model equation for population growth change rate y = 0.09 - 0.01*log(x) 
                         # where x is gdp per capita and y is the population growth rate
-                        self.pop_growth_rate = 0.0874 - 0.0190*np.log10(self.gdp_pc)
-                        new_population = self.population * (1 + self.pop_growth_rate)
-                        self.population = new_population
+
+                        # however also here we make an hysteresis assumption, meaning we only apply this rule if the gdp per capita increases, if it decreases we do not change population growth rate
+                        # because it is not clear that planned degrowth economies revert socio-cultural norms to higher fertility rates
+
+                        if self.scenario.population_hysteresis_assumption == "on":
+
+                                if self.cagr_average > 0:
+                                        self.pop_growth_rate = 0.0874 - 0.0190*np.log10(self.gdp_pc)
+                                        new_population = self.population * (1 + self.pop_growth_rate)
+                                        if self.code == "DEU":
+                                                print("this is the population growth rate of ", self.code, " ", self.pop_growth_rate)
+                                                print("this is the gdp per capita in ", self.code, " ", self.gdp_pc)
+                                        self.population = new_population
+                                else:
+                                        # if degrowing from 2023 onwards keep population growth as it has been in 2022, preservation of socio-cultural norms
+                                        self.pop_growth_rate = 0.0874 - 0.0190*np.log10(self.gdppc_trajectory[2022])
+                                        if self.code == "DEU":
+                                                print("this is the population growth rate of ", self.code, " ", self.pop_growth_rate)
+                                                print("this is the gdp per capita in ", self.code, " ", self.gdp_pc)
+                                        new_population = self.population * (1 + self.pop_growth_rate)
+                                        self.population = new_population
+
+                        elif self.scenario.population_hysteresis_assumption == "off":
+
+                                self.pop_growth_rate = 0.0874 - 0.0190*np.log10(self.gdp_pc)
+                                new_population = self.population * (1 + self.pop_growth_rate)
+                                if self.code == "DEU":
+                                                print("this is the population growth rate of ", self.code, " ", self.pop_growth_rate)
+                                                print("this is the gdp per capita in ", self.code, " ", self.gdp_pc)
+                                self.population = new_population
 
                         
                 elif self.scenario.pop_growth_assumption == "semi_log_model_elasticity":

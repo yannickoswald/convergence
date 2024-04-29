@@ -36,7 +36,7 @@ class Scenario():
         self.end_year = scenario_params["end_year"]
         self.income_goal = scenario_params["income_goal"]
         self.carbon_budget = scenario_params["carbon_budget"]
-        self.hysteresis_tech_progress = scenario_params["hysteresis_tech_progress"]
+        #self.hysteresis_tech_progress = scenario_params["hysteresis_tech_progress"]
         self.k = scenario_params["k"]
         self.t0 = scenario_params["t0"]
         self.final_improvement_rate = scenario_params["final_improvement_rate"]
@@ -54,7 +54,10 @@ class Scenario():
         self.tech_evolution_assumption = self.validate_assumption(scenario_params, "tech_evolution_assumption", ["plausible", "necessary"])
         self.tech_hysteresis_assumption = self.validate_assumption(scenario_params, "tech_hysteresis_assumption", ["on", "off"])
         self.steady_state_high_income_assumption = self.validate_assumption(scenario_params, "steady_state_high_income_assumption", ["on", "off", "on_with_growth"])
+        self.population_hysteresis_assumption = self.validate_assumption(scenario_params, "population_hysteresis_assumption", ["on", "off"])
         
+        # Initialize global outcomes storage
+        self.gini_data = {"years": [], "population": [], "income": []}
 
     @staticmethod 
     def validate_assumption(params, key, valid_values):
@@ -348,6 +351,73 @@ class Scenario():
                 global_population += country.population
         return global_population
     
+    def create_global_population_and_income_vectors(self):
+                
+                """
+                Description: 
+                        Create a vector of population and income for all countries across *all deciles*.
+                        Necessary for computing global gini coefficient.
+                Parameters:
+                        None
+                """
+                
+                # create empty lists to store the population and income
+                population = []
+                income = []
+                for country in self.countries.values():
+                        for country_decile in range(1, 11):
+                                population.append(country.population / 10) # divide by 10 to get the population of each decile
+                                income.append(getattr(country, f'decile{country_decile}_abs')) # get the income of each decile
+
+                # sort the income and population vectors according to the income vector
+                income, population = zip(*sorted(zip(income, population)))
+
+                # store the population and income vectors in the self.gini_data dictionary
+                # store the year by extracting it from a country instance
+
+                self.gini_data["years"].append(self.countries["Germany"].year)
+                self.gini_data["population"].append(population)
+                self.gini_data["income"].append(income)
+
+    def compute_gini_coefficient_change_rate(self):
+         
+        gini_data = pd.DataFrame(self.gini_data)
+
+         # read out the columns population and income from gini data and plot each values as lorenz curve
+        #subset for every year in gini_data years column the value in population and income column
+        # loop ovre the years
+
+        list_of_gini_coefficients = []
+
+        for year in gini_data["years"]:
+                # Get the population data for the year
+                population_data = list(gini_data.loc[gini_data["years"] == year, "population"].iloc[0])
+                # Get the income data for the year
+                income_data = list(gini_data.loc[gini_data["years"] == year, "income"].iloc[0])
+
+                # compute the total income_data as well by multiplying the income_data with the population_data
+                total_income = [population_data[i]*income_data[i] for i in range(len(population_data))]
+
+                # compute the cumulative total income share and the cumulative population share
+                cumulative_income_share = [sum(total_income[:i])/sum(total_income) for i in range(len(total_income)+1)]
+
+                cumulative_population_share = [sum(population_data[:i])/sum(population_data) for i in range(len(population_data)+1)]
+
+                # Compute the Gini coefficient
+                # The area under the Lorenz curve can be computed as the sum of the areas of the trapezoids under it
+                area_under_lorenz_curve = sum((cumulative_population_share[i+1] - cumulative_population_share[i]) * 
+                                                (cumulative_income_share[i+1] + cumulative_income_share[i]) / 2 
+                                                for i in range(len(cumulative_population_share)-1))
+                gini_coefficient = 1 - 2 * area_under_lorenz_curve
+
+                list_of_gini_coefficients.append(gini_coefficient)
+        
+
+        ## use a placeholder approximately 0, so 0.1 here, to avoid computation problems of average necessary cagr
+        gini_coefficient_change_rate = (0.01 / list_of_gini_coefficients[0]) ** (1 / (len(list_of_gini_coefficients) - 1)) - 1
+
+        return gini_coefficient_change_rate
+
 
     def step(self):
             
@@ -358,6 +428,7 @@ class Scenario():
                 None
         """
         
+        # loop over all countries for country specific steps
         for country in self.countries.values():
                 country.technological_change()
                 country.economic_growth()
@@ -367,6 +438,9 @@ class Scenario():
                 country.year += 1 # increase the year by one
                 country.save_current_state() # save the current state of the country
 
+        # global level steps such as gini coefficient calculation
+        
+        self.create_global_population_and_income_vectors()
 
     def run(self):
 

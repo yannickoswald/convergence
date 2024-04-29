@@ -20,7 +20,6 @@ class ScenarioSweeper:
     def __init__(self, end_year_values,
                        income_goal_values,
                        carbon_budget_values,
-                       hysteresis_tech_progress_values,
                        gdp_assumption_values,
                        pop_growth_assumption_values,
                        tech_evolution_assumption_values,
@@ -40,7 +39,7 @@ class ScenarioSweeper:
         self.end_year_values = end_year_values
         self.income_goal_values = income_goal_values
         self.carbon_budget_values = carbon_budget_values
-        self.hysteresis_tech_progress_values = hysteresis_tech_progress_values
+        #self.hysteresis_tech_progress_values = hysteresis_tech_progress_values
         self.gdp_assumption_values = gdp_assumption_values
         self.pop_growth_assumption_values = pop_growth_assumption_values # Assume two different population growth rates
         self.tech_evolution_assumption_values = tech_evolution_assumption_values # Assume two different technological evolution rates
@@ -54,6 +53,8 @@ class ScenarioSweeper:
         self.total_emissions = {}
         # store the global average growth rate for each scenario in a dictionary where the key is the scenario specified via the params and the value is the global average growth rate
         self.growth_rate_global = {}
+        # store the gini coefficient change rate for each scenario in a dictionary where the key is the scenario specified via the params and the value is the gini coefficient change rate
+        self.gini_coefficient_change_rate_global = {}
         
     def run_scenarios(self):
         
@@ -76,48 +77,49 @@ class ScenarioSweeper:
         
         
         # Iterate over all possible combinations of variable parameter values
-        for hysteresis_tech_progress in self.hysteresis_tech_progress_values: # this will be perhaps many values
-            for carbon_budget in self.carbon_budget_values: # this will be perhaps many values
-                for end_year in self.end_year_values: # this will be perhaps many values
-                    for income_goal in self.income_goal_values: # this will perhaps be many values
-                        # Create a new scenario with the current parameter values
-                        scenario_params = {
-                            "end_year": end_year,
-                            "income_goal": income_goal,
-                            "carbon_budget": carbon_budget,
-                            "hysteresis_tech_progress": hysteresis_tech_progress,
-                            "gdp_assumption": gdp_assumption,
-                            "pop_growth_assumption": pop_growth_assumption,
-                            "tech_evolution_assumption": tech_evolution_assumption,
-                            "tech_hysteresis_assumption": tech_hysteresis_assumption,
-                            "steady_state_high_income_assumption": steady_state_high_income_assumption,
-                            "k": sigmoid_parameters[0],
-                            "t0": sigmoid_parameters[1],
-                            "final_improvement_rate": final_improvement_rate
-                        }
-                        
-                        scenario = self.create_scenario(scenario_params)
-                        scenario.compute_country_scenario_params()
+        #for hysteresis_tech_progress in self.hysteresis_tech_progress_values: # this will be perhaps many values
+        for carbon_budget in self.carbon_budget_values: # this will be perhaps many values
+            for end_year in self.end_year_values: # this will be perhaps many values
+                for income_goal in self.income_goal_values: # this will perhaps be many values
+                    # Create a new scenario with the current parameter values
+                    scenario_params = {
+                        "end_year": end_year,
+                        "income_goal": income_goal,
+                        "carbon_budget": carbon_budget,
+                        "gdp_assumption": gdp_assumption,
+                        "pop_growth_assumption": pop_growth_assumption,
+                        "tech_evolution_assumption": tech_evolution_assumption,
+                        "tech_hysteresis_assumption": tech_hysteresis_assumption,
+                        "steady_state_high_income_assumption": steady_state_high_income_assumption,
+                        "k": sigmoid_parameters[0],
+                        "t0": sigmoid_parameters[1],
+                        "final_improvement_rate": final_improvement_rate
+                    }
+                    
+                    scenario = self.create_scenario(scenario_params)
+                    scenario.compute_country_scenario_params()
 
-                        # Convert scenario_params dictionary to a tuple of tuples (key, value pairs)
-                        scenario_key = tuple(sorted(scenario_params.items()))
+                    # Convert scenario_params dictionary to a tuple of tuples (key, value pairs)
+                    scenario_key = tuple(sorted(scenario_params.items()))
 
-                        # Calculate the global average necessary growth rate for the current scenario at the beginning so before the scenario runs
-                        global_growth_rate = scenario.compute_average_global_growth_rate()
-                        self.growth_rate_global[scenario_key] = global_growth_rate
-                        
-                        # Run the scenario
-                        scenario.run()
+                    # Calculate the global average necessary growth rate for the current scenario at the beginning so before the scenario runs
+                    global_growth_rate = scenario.compute_average_global_growth_rate()
+                    self.growth_rate_global[scenario_key] = global_growth_rate
+                    
+                    # Run the scenario
+                    scenario.run()
 
-                        # Calculate total emissions for the current scenario
-                        total_emission = scenario.sum_cumulative_emissions()
-                        total_emissions_gigatonnes = total_emission / 1e9  # convert to gigatonnes
-                        # Store the total emissions in the list
-                        
-                        self.total_emissions[scenario_key] = total_emissions_gigatonnes / carbon_budget # store the ratio of total emissions to the carbon budget for each scenario
-                                   
-        
-        return self.total_emissions, self.growth_rate_global
+                    # Calculate total emissions for the current scenario
+                    total_emission = scenario.sum_cumulative_emissions()
+                    total_emissions_gigatonnes = total_emission / 1e9  # convert to gigatonnes
+                    # Store the total emissions in the list
+                    self.total_emissions[scenario_key] = total_emissions_gigatonnes / carbon_budget # store the ratio of total emissions to the carbon budget for each scenario
+
+                    # Calculate the gini coefficient change rate for the current scenario
+                    self.gini_coefficient_change_rate_global[scenario_key] = scenario.compute_gini_coefficient_change_rate()
+
+
+        return self.total_emissions, self.growth_rate_global, self.gini_coefficient_change_rate_global
     
     def create_scenario(self, params):
         # Assuming Scenario is a class that takes a dictionary of parameters
@@ -476,6 +478,36 @@ class ScenarioSweeper:
             if ax is None:
                 # Return figure and axes for external use
                 return fig, ax
+            
+
+    def plot_gini_coefficient_change_trade_off(self, dependent_var, variables_considered, ax=None):
+        
+        """
+        Description: 
+           Plot the corresponding trade-off between the gini coefficient change and the parameters considered.
+        
+        Parameters:
+            (1) dependent_var          - a dictionary containing the gini coefficient change for each scenario
+            (2) variables_considered   - a list of the parameters to be considered in the trade-off plot
+            (3) ax                     - optional, axes object to plot on
+        """ 
+
+        if len(variables_considered) != 2:
+            raise ValueError("variables_considered must contain exactly two elements")
+
+        # Initialize sets to hold unique values for the variables considered
+        x_values_set = set()
+        y_values_set = set()
+
+        name_mapping = {"end_year": "End Year",
+                        "income_goal": "Income Goal $PPPpc", 
+                        "carbon_budget": "Carbon Budget", 
+                        "gdp_assumption": "GDP Assumption"}
+
+        # Iterate through the keys to extract variable values
+        for key in dependent_var.keys():
+            # Assuming key is a tuple of tuples representing key-value pairs
+            params_dict = {k: v for k, v in key}
               
 
     def plot_growth_vs_decarbonization_rates(self):
