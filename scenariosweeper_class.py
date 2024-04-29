@@ -26,7 +26,8 @@ class ScenarioSweeper:
                        tech_hysteresis_assumption_values,
                        steady_state_high_income_assumption_values,
                        sigmoid_parameters_values,
-                       final_improvement_rate):
+                       final_improvement_rate,
+                       population_hysteresis_assumption_values):
 
         """
         Description: 
@@ -41,11 +42,12 @@ class ScenarioSweeper:
         self.carbon_budget_values = carbon_budget_values
         #self.hysteresis_tech_progress_values = hysteresis_tech_progress_values
         self.gdp_assumption_values = gdp_assumption_values
-        self.pop_growth_assumption_values = pop_growth_assumption_values # Assume two different population growth rates
-        self.tech_evolution_assumption_values = tech_evolution_assumption_values # Assume two different technological evolution rates
-        self.tech_hysteresis_assumption_values = tech_hysteresis_assumption_values # Assume two different technological hysteresis rates    
-        self.steady_state_high_income_assumption_values = steady_state_high_income_assumption_values # Assume two different steady state high income assumptions
-    
+        self.pop_growth_assumption_values = pop_growth_assumption_values # Assume different population growth rates
+        self.tech_evolution_assumption_values = tech_evolution_assumption_values # Assume  different technological evolution rates
+        self.tech_hysteresis_assumption_values = tech_hysteresis_assumption_values # Assume different technological hysteresis rates    
+        self.steady_state_high_income_assumption_values = steady_state_high_income_assumption_values # Assume  different steady state high income assumptions
+        self.population_hysteresis_assumption_values = population_hysteresis_assumption_values # Assume different population hysteresis assumptions 
+
         self.sigmoid_parameters_values = sigmoid_parameters_values
         self.final_improvement_rate = final_improvement_rate
         
@@ -71,6 +73,9 @@ class ScenarioSweeper:
         pop_growth_assumption = self.pop_growth_assumption_values[0] # this will be just one value in this iteration but for consistency and generality we loop over all the given values
         tech_evolution_assumption = self.tech_evolution_assumption_values[0]  # this will be just one value in this iteration but for consistency and generality we loop over all the given values
         steady_state_high_income_assumption = self.steady_state_high_income_assumption_values[0]  # this will be just one value in this iteration but for consistency and generality we loop over all the given values  
+        population_hysteresis_assumption = self.population_hysteresis_assumption_values[0]
+
+
 
         sigmoid_parameters = self.sigmoid_parameters_values  # this will be just one value in this iteration but for consistency and generality we loop over all the given values
         final_improvement_rate = self.final_improvement_rate  # this will be just one value in this iteration but for consistency and generality we loop over all the given values
@@ -93,7 +98,8 @@ class ScenarioSweeper:
                         "steady_state_high_income_assumption": steady_state_high_income_assumption,
                         "k": sigmoid_parameters[0],
                         "t0": sigmoid_parameters[1],
-                        "final_improvement_rate": final_improvement_rate
+                        "final_improvement_rate": final_improvement_rate,
+                        "population_hysteresis_assumption": population_hysteresis_assumption
                     }
                     
                     scenario = self.create_scenario(scenario_params)
@@ -265,27 +271,40 @@ class ScenarioSweeper:
             return '2.5°C 50%'
         ax.clabel(contour_line, fmt=custom_fmt2, inline=True, fontsize=8)
 
-     
+        # Annotate for the year 2100 and income goal 20000
+        try:
+            x_pos_2100 = x_values.index(2100)
+            y_pos_20000 = y_values.index(20000)
+            # Convert positions to actual coordinates on the plot
+            x_coord_2100 = x_values[x_pos_2100]
+            y_coord_20000 = y_values[y_pos_20000]
+            # Annotate the point with a marker
+            ax.scatter(x_coord_2100, y_coord_20000, color='red', s=100, zorder=5)
+            # Annotate with text and a straight line pointing to the point
+            ax.annotate("2100\n Denmark\n scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-30, 40), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
+        except ValueError:
+            print("Specified year or income goal not found in the dataset for the 2100 scenario.")
+
+
+            # Annotate for the z, level, value for the year 2100 and income goal 20000
+        # After defining the Z array and before the other annotations...
+
+        try:
+            # Step 1: Find the indices for x = 2100 and y = 20000
+            x_pos = x_values.index(2100)
+            y_pos = y_values.index(20000)
+
+            # Step 2: Use these indices to find the Z value
+            z_value = Z[y_pos, x_pos]
+
+            # Step 3: Annotate this Z value on the plot
+            ax.scatter(x_values[x_pos], y_values[y_pos], color='red', s=100, zorder=5)  # Mark the point
+            ax.annotate(f"Overshoot {z_value:.2f}", (x_values[x_pos], y_values[y_pos]), textcoords="offset points", xytext=(-40, 0), ha='center', fontsize=8, arrowprops=dict(arrowstyle="-", color='black'))
+        except ValueError as e:
+            print("Specified point (2100, 20000) not found in the dataset.")
 
         ######## additional annotations that should be only introduced for figure 3 but not figure 4  ########
         if annotations_plot:
-
-            # Annotate for the z, level, value for the year 2100 and income goal 20000
-            # After defining the Z array and before the other annotations...
-
-            try:
-                # Step 1: Find the indices for x = 2100 and y = 20000
-                x_pos = x_values.index(2100)
-                y_pos = y_values.index(20000)
-
-                # Step 2: Use these indices to find the Z value
-                z_value = Z[y_pos, x_pos]
-
-                # Step 3: Annotate this Z value on the plot
-                ax.scatter(x_values[x_pos], y_values[y_pos], color='red', s=100, zorder=5)  # Mark the point
-                ax.annotate(f"Overshoot {z_value:.2f}", (x_values[x_pos], y_values[y_pos]), textcoords="offset points", xytext=(-40, 0), ha='center', fontsize=8, arrowprops=dict(arrowstyle="-", color='black'))
-            except ValueError as e:
-                print("Specified point (2100, 20000) not found in the dataset.")
 
                ######## add extracted growth rates feasible regions lines
             # Plotting the lines for level 0
@@ -306,19 +325,7 @@ class ScenarioSweeper:
                                 [2060.31708066, 30000.]])
             ax.plot(coords_004[:, 0], coords_004[:, 1], color = "cyan", linestyle = '--', label='4%')  # 'w--' for white dashed line
 
-            # Annotate for the year 2100 and income goal 20000
-            try:
-                x_pos_2100 = x_values.index(2100)
-                y_pos_20000 = y_values.index(20000)
-                # Convert positions to actual coordinates on the plot
-                x_coord_2100 = x_values[x_pos_2100]
-                y_coord_20000 = y_values[y_pos_20000]
-                # Annotate the point with a marker
-                ax.scatter(x_coord_2100, y_coord_20000, color='red', s=100, zorder=5)
-                # Annotate with text and a straight line pointing to the point
-                ax.annotate("2100\n Denmark\n scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-30, 40), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
-            except ValueError:
-                print("Specified year or income goal not found in the dataset for the 2100 scenario.")
+          
 
             # Annotate for the year 2050 and income goal 9100 or rather 10000
             try:

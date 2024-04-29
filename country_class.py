@@ -346,16 +346,10 @@ class Country():
                                 if self.cagr_average > 0:
                                         self.pop_growth_rate = 0.0874 - 0.0190*np.log10(self.gdp_pc)
                                         new_population = self.population * (1 + self.pop_growth_rate)
-                                        if self.code == "DEU":
-                                                print("this is the population growth rate of ", self.code, " ", self.pop_growth_rate)
-                                                print("this is the gdp per capita in ", self.code, " ", self.gdp_pc)
                                         self.population = new_population
                                 else:
                                         # if degrowing from 2023 onwards keep population growth as it has been in 2022, preservation of socio-cultural norms
                                         self.pop_growth_rate = 0.0874 - 0.0190*np.log10(self.gdppc_trajectory[2022])
-                                        if self.code == "DEU":
-                                                print("this is the population growth rate of ", self.code, " ", self.pop_growth_rate)
-                                                print("this is the gdp per capita in ", self.code, " ", self.gdp_pc)
                                         new_population = self.population * (1 + self.pop_growth_rate)
                                         self.population = new_population
 
@@ -363,9 +357,6 @@ class Country():
 
                                 self.pop_growth_rate = 0.0874 - 0.0190*np.log10(self.gdp_pc)
                                 new_population = self.population * (1 + self.pop_growth_rate)
-                                if self.code == "DEU":
-                                                print("this is the population growth rate of ", self.code, " ", self.pop_growth_rate)
-                                                print("this is the gdp per capita in ", self.code, " ", self.gdp_pc)
                                 self.population = new_population
 
                         
