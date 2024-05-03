@@ -57,6 +57,8 @@ class ScenarioSweeper:
         self.growth_rate_global = {}
         # store the gini coefficient change rate for each scenario in a dictionary where the key is the scenario specified via the params and the value is the gini coefficient change rate
         self.gini_coefficient_change_rate_global = {}
+        # store the final emissions for each scenario in a dictionary where the key is the scenario specified via the params and the value is the final emissions
+        self.final_emissions = {}
         
     def run_scenarios(self):
         
@@ -124,8 +126,10 @@ class ScenarioSweeper:
                     # Calculate the gini coefficient change rate for the current scenario
                     self.gini_coefficient_change_rate_global[scenario_key] = scenario.compute_gini_coefficient_change_rate()
 
+                    self.final_emissions[scenario_key] = scenario.compute_ending_global_emissions_above_linear_budget()
 
-        return self.total_emissions, self.growth_rate_global, self.gini_coefficient_change_rate_global
+
+        return self.total_emissions, self.growth_rate_global, self.gini_coefficient_change_rate_global, self.final_emissions
     
     def create_scenario(self, params):
         # Assuming Scenario is a class that takes a dictionary of parameters
@@ -206,8 +210,6 @@ class ScenarioSweeper:
             
             return combined_cmap
         
-
-      
 
 
         # Create linear segmented colormaps for values below and above the threshold
@@ -325,7 +327,6 @@ class ScenarioSweeper:
                                 [2060.31708066, 30000.]])
             ax.plot(coords_004[:, 0], coords_004[:, 1], color = "cyan", linestyle = '--', label='4%')  # 'w--' for white dashed line
 
-          
 
             # Annotate for the year 2050 and income goal 9100 or rather 10000
             try:
@@ -515,7 +516,190 @@ class ScenarioSweeper:
         for key in dependent_var.keys():
             # Assuming key is a tuple of tuples representing key-value pairs
             params_dict = {k: v for k, v in key}
-              
+
+          
+
+    def plot_final_emissions_trade_off(self, dependent_var, variables_considered, annotations_plot, colorscaleon, ax=None):
+
+         
+        """
+        Description: 
+           Plot the corresponding trade-off between the total emissions and the parameters considered.
+        
+        Parameters:
+            (1) output                 - a dictionary containing the total emissions for each scenario
+            (2) variables_considered   - a list of the parameters to be considered in the trade-off plot
+            (3) ax                     - optional, axes object to plot on
+        """ 
+
+        if len(variables_considered) != 2:
+            raise ValueError("variables_considered must contain exactly two elements")
+
+        # Initialize sets to hold unique values for the variables considered
+        x_values_set = set()
+        y_values_set = set()
+
+        name_mapping = {"end_year": "End Year",
+                        "income_goal": "Income Goal $PPPpc", 
+                        "carbon_budget": "Carbon Budget", 
+                        "gdp_assumption": "GDP Assumption"}
+
+        # Iterate through the keys to extract variable values
+        for key in dependent_var.keys():
+            # Assuming key is a tuple of tuples representing key-value pairs
+            params_dict = {k: v for k, v in key}  # Correctly convert tuple of tuples into a dictionary
+            x_values_set.add(params_dict[variables_considered[0]])
+            y_values_set.add(params_dict[variables_considered[1]])
+
+        # Convert sets to sorted lists
+        x_values = sorted(x_values_set)
+        y_values = sorted(y_values_set)
+        # Create meshgrid
+        X, Y = np.meshgrid(x_values, y_values)
+        # Initialize a 2D array for emissions data
+        Z = np.zeros(X.shape)
+        print("this is the Z", Z)
+        print("this is the X", X)
+        print("this is the Y", Y)
+
+        # Populate the Z array with total emissions data
+        for key, value in dependent_var.items():
+            params_dict = {k: v for k, v in key}  # Convert each key into a dictionary
+            x_index = x_values.index(params_dict[variables_considered[0]])
+            y_index = y_values.index(params_dict[variables_considered[1]])
+            Z[y_index, x_index] = value
+        
+
+        # Define a simple continuous colormap
+        simple_cmap = plt.cm.viridis  # Using a pre-existing colormap
+
+        # Conditionally add vmin and vmax to the arguments
+        #if fixed_color_scale:
+         #   contourf_kwargs["vmin"] = 0  # Minimum value of Z for the color scale
+         #   contourf_kwargs["vmax"] = 2.5  # Maximum value of Z for the color scale
+        # Create figure and axes for plotting
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(10, 6))
+        else:
+            fig = ax.get_figure()
+
+        # Using the simple colormap directly in contourf
+        contour = ax.contourf(X, Y, Z, levels=200, cmap=simple_cmap)
+        if colorscaleon:
+            colorbar = fig.colorbar(contour, ax=ax)
+            colorbar.set_label(f'Pct of emissions left to zero', rotation=270, labelpad=15, fontsize=8)
+            # Set the colorbar's tick labels to predefined values
+            #colorbar.set_ticks([0.5, 1, 1.5, 2])  # Predefined tick values ## needs to be activated for figure 3 and deactivated for figure 4
+            # Define a function to format the ticks with a percentage sign
+            def format_tick(x, _):
+                return f'{x * 100:.0f}%'
+
+            # Applying the formatter to the colorbar
+            colorbar.formatter = FuncFormatter(format_tick)
+            colorbar.update_ticks()
+        ax.set_xlabel(name_mapping[variables_considered[0]])
+        ax.set_ylabel(name_mapping[variables_considered[1]])
+        ax.set_xticks(x_values)
+        ax.set_xticklabels([str(x) for x in x_values], rotation=45)
+        ax.set_yticks(y_values)
+        ax.set_yticklabels([str(y) for y in y_values])
+        ax.set_xlim(min(x_values), max(x_values))
+        ax.set_ylim(min(y_values), max(y_values))
+
+        ############ ANNONTATIONS ############
+        # Demarcate line where the ratio equals 1
+        #contour_line = ax.contour(X, Y, Z, levels=[1], colors='white', linestyles='dashed')
+        #def custom_fmt(x):
+         #   return '2°C 67%'
+        #ax.clabel(contour_line, fmt=custom_fmt, inline=True, fontsize=8)
+
+        # Demarcate line where the ratio equals 1.1858190709 2 degree budget with 50% 
+        #contour_line = ax.contour(X, Y, Z, levels=[1.1858190709], colors='white', linestyles='dashed')
+        #def custom_fmt2(x):
+         #   return '2°C 50%'
+        #ax.clabel(contour_line, fmt=custom_fmt2, inline=True, fontsize=8)
+
+        # Demarcate line where the ratio equals ROUGHLY 2100/(1150*0.95 - 2*35) = 2.05378973105 for 50% chance to stay below 2.5 degree based on https://www.nature.com/articles/s41558-023-01848-5 fig.4 c
+        #contour_line = ax.contour(X, Y, Z, levels=[2.05378973105], colors='white', linestyles='dashed')
+        #def custom_fmt2(x):
+         #   return '2.5°C 50%'
+        #ax.clabel(contour_line, fmt=custom_fmt2, inline=True, fontsize=8)
+
+        # Annotate for the year 2100 and income goal 20000
+        try:
+            x_pos_2100 = x_values.index(2100)
+            y_pos_20000 = y_values.index(20000)
+            # Convert positions to actual coordinates on the plot
+            x_coord_2100 = x_values[x_pos_2100]
+            y_coord_20000 = y_values[y_pos_20000]
+            # Annotate the point with a marker
+            ax.scatter(x_coord_2100, y_coord_20000, color='red', s=100, zorder=5)
+            # Annotate with text and a straight line pointing to the point
+            ax.annotate("2100\n Denmark\n scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-30, 40), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
+        except ValueError:
+            print("Specified year or income goal not found in the dataset for the 2100 scenario.")
+
+
+            # Annotate for the z, level, value for the year 2100 and income goal 20000
+        # After defining the Z array and before the other annotations...
+
+        try:
+            # Step 1: Find the indices for x = 2100 and y = 20000
+            x_pos = x_values.index(2100)
+            y_pos = y_values.index(20000)
+
+            # Step 2: Use these indices to find the Z value
+            z_value = Z[y_pos, x_pos]
+
+            # Step 3: Annotate this Z value on the plot
+            ax.scatter(x_values[x_pos], y_values[y_pos], color='red', s=100, zorder=5)  # Mark the point
+            ax.annotate(f"Remaining of total {z_value:.2f}", (x_values[x_pos], y_values[y_pos]), textcoords="offset points", xytext=(-40, 0), ha='center', fontsize=8, arrowprops=dict(arrowstyle="-", color='black'))
+        except ValueError as e:
+            print("Specified point (2100, 20000) not found in the dataset.")
+
+        ######## additional annotations that should be only introduced for figure 3 but not figure 4  ########
+        if annotations_plot:
+
+               ######## add extracted growth rates feasible regions lines
+            # Plotting the lines for level 0
+            coords_0 = np.array([[2040., 7091.76725433],
+                                [2060., 7104.1157445],
+                                [2078.19032277, 7107.60378143],
+                                [2081.80967737, 7108.11988921],
+                                [2100., 7109.81960993]])
+            ax.plot(coords_0[:, 0], coords_0[:, 1], color = "cyan", linestyle = '--', label='0%')  # 'w--' for white dashed line
+            
+            # Plotting the lines for level 0.04
+            coords_004 = np.array([[2040., 13763.74664383],
+                                [2044.7325622, 15000.],
+                                [2053.52721919, 20000.],
+                                [2057.06128359, 24277.62144207],
+                                [2058.02526381, 25748.84170682],
+                                [2060., 29776.31871013],
+                                [2060.31708066, 30000.]])
+            ax.plot(coords_004[:, 0], coords_004[:, 1], color = "cyan", linestyle = '--', label='4%')  # 'w--' for white dashed line
+
+          
+
+            # Annotate for the year 2050 and income goal 9100 or rather 10000
+            try:
+                x_pos_2050 = x_values.index(2060)
+                y_pos_9100 = y_values.index(10000)
+                # Convert positions to actual coordinates on the plot
+                x_coord_2050 = x_values[x_pos_2050]
+                y_coord_9100 = y_values[y_pos_9100]
+                # Annotate the point with a marker
+                ax.scatter(x_coord_2050, y_coord_9100, color='blue', s=100, zorder=5)  # Use a different color for distinction
+                # Annotate with text and a straight line pointing to the point
+                ax.annotate("2060\nCosta Rica\nscenario", (x_coord_2050, y_coord_9100), textcoords="offset points", xytext=(45,20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
+            except ValueError:
+                print("Specified year or income goal not found in the dataset for the 2060 scenario.")
+
+        if ax is None:
+            # Return figure and axes for external use
+            return fig, ax
+
+
 
     def plot_growth_vs_decarbonization_rates(self):
         pass
