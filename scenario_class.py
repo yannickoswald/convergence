@@ -257,14 +257,14 @@ class Scenario():
                         global_emissions += country.emissions_trajectory[self.end_year] # only interested in the emissions at the end
                 # get correct linear carbon budget value for the end year
                 linear_carbon_budget = self.compute_linear_carbon_budget_pathway()
-                print("this is linear budget", linear_carbon_budget[1])
+                #print("this is linear budget", linear_carbon_budget[1])
                 # get the emissions at the specific end year from the linear carbon budget given that linear carbon budget is returned as years, emissions
                 if self.end_year - self.start_year > len(linear_carbon_budget[1]):
                      linear_carbon_budget_emissions = 0
                 else:
                      linear_carbon_budget_emissions = linear_carbon_budget[1][self.end_year - self.start_year] / 1e9 # convert to gigatons from tons
-                print("this is linear budget emissions", linear_carbon_budget_emissions)
-                return global_emissions/1e9 - linear_carbon_budget_emissions
+                #print("this is linear budget emissions", linear_carbon_budget_emissions)
+                return global_emissions/1e9
 
     def compute_linear_carbon_budget_pathway(self):
         

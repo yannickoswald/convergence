@@ -174,9 +174,9 @@ class ScenarioSweeper:
         X, Y = np.meshgrid(x_values, y_values)
         # Initialize a 2D array for emissions data
         Z = np.zeros(X.shape)
-        print("this is the Z", Z)
-        print("this is the X", X)
-        print("this is the Y", Y)
+        #print("this is the Z", Z)
+        #print("this is the X", X)
+        #print("this is the Y", Y)
 
         # Populate the Z array with total emissions data
         for key, value in dependent_var.items():
@@ -216,14 +216,14 @@ class ScenarioSweeper:
         cmap_below = mcolors.LinearSegmentedColormap.from_list("below", colors_below)
         cmap_above = mcolors.LinearSegmentedColormap.from_list("above", colors_above)
 
-        print("this is the cmap_below", cmap_below)
-        print("this is the cmap_above", cmap_above)
+        #print("this is the cmap_below", cmap_below)
+        #print("this is the cmap_above", cmap_above)
 
         # Combine the color maps with a threshold at 1
         combined_cmap = combine_cmaps(cmap_below, cmap_above, 1, Z)
         #print("this is the combined_cmap", combined_cmap)
         # Initialize contour plot arguments with the custom colormap and normalization
-        print("this is combined_cmap", combined_cmap)
+        #print("this is combined_cmap", combined_cmap)
         contourf_kwargs = {
             "levels": 200,  # More levels for a smoother transition
             "cmap": combined_cmap
@@ -256,22 +256,41 @@ class ScenarioSweeper:
 
         ############ ANNONTATIONS ############
         # Demarcate line where the ratio equals 1
-        contour_line = ax.contour(X, Y, Z, levels=[1], colors='white', linestyles='dashed')
+        contour_line_0 = ax.contour(X, Y, Z, levels=[1], colors='white', linestyles='dashed')
         def custom_fmt(x):
             return '2°C 67%'
-        ax.clabel(contour_line, fmt=custom_fmt, inline=True, fontsize=8)
+        ax.clabel(contour_line_0, fmt=custom_fmt, inline=True, fontsize=8)
 
         # Demarcate line where the ratio equals 1.1858190709 2 degree budget with 50% 
-        contour_line = ax.contour(X, Y, Z, levels=[1.1858190709], colors='white', linestyles='dashed')
+        contour_line_1 = ax.contour(X, Y, Z, levels=[1.1858190709], colors='white', linestyles='dashed')
         def custom_fmt2(x):
             return '2°C 50%'
-        ax.clabel(contour_line, fmt=custom_fmt2, inline=True, fontsize=8)
+        ax.clabel(contour_line_1, fmt=custom_fmt2, inline=True, fontsize=8)
 
         # Demarcate line where the ratio equals ROUGHLY 2100/(1150*0.95 - 2*35) = 2.05378973105 for 50% chance to stay below 2.5 degree based on https://www.nature.com/articles/s41558-023-01848-5 fig.4 c
-        contour_line = ax.contour(X, Y, Z, levels=[2.05378973105], colors='white', linestyles='dashed')
+        contour_line_2 = ax.contour(X, Y, Z, levels=[2.05378973105], colors='white', linestyles='dashed')
         def custom_fmt2(x):
             return '2.5°C 50%'
-        ax.clabel(contour_line, fmt=custom_fmt2, inline=True, fontsize=8)
+        ax.clabel(contour_line_2, fmt=custom_fmt2, inline=True, fontsize=8)
+
+
+
+        # Extract paths
+        paths_2_degree_budget = contour_line_0.collections[0].get_paths()
+        paths_2_degree_budget_50pct = contour_line_1.collections[0].get_paths()
+
+        def extract_coordinates(paths):
+            coords_list = []
+            for path in paths:
+                vertices = path.vertices
+                coords_list.append(vertices)  # Each item is an array of [X, Y] coordinates
+            return coords_list
+
+        coords_2_degree67 = extract_coordinates(paths_2_degree_budget)
+        coords_2_degree50 = extract_coordinates(paths_2_degree_budget_50pct)
+
+        print("this is the coords_2_degree67", coords_2_degree67)
+
 
         # Annotate for the year 2100 and income goal 20000
         try:
@@ -587,7 +606,7 @@ class ScenarioSweeper:
         contour = ax.contourf(X, Y, Z, levels=200, cmap=simple_cmap)
         if colorscaleon:
             colorbar = fig.colorbar(contour, ax=ax)
-            colorbar.set_label(f'Pct of emissions left to zero', rotation=270, labelpad=15, fontsize=8)
+            colorbar.set_label(f'Pct of emissions left compared to 2022', rotation=270, labelpad=15, fontsize=8)
             # Set the colorbar's tick labels to predefined values
             #colorbar.set_ticks([0.5, 1, 1.5, 2])  # Predefined tick values ## needs to be activated for figure 3 and deactivated for figure 4
             # Define a function to format the ticks with a percentage sign
@@ -653,7 +672,7 @@ class ScenarioSweeper:
 
             # Step 3: Annotate this Z value on the plot
             ax.scatter(x_values[x_pos], y_values[y_pos], color='red', s=100, zorder=5)  # Mark the point
-            ax.annotate(f"Remaining of total {z_value:.2f}", (x_values[x_pos], y_values[y_pos]), textcoords="offset points", xytext=(-40, 0), ha='center', fontsize=8, arrowprops=dict(arrowstyle="-", color='black'))
+            ax.annotate(f"Remaining of total {z_value:.2f}", (x_values[x_pos], y_values[y_pos]), textcoords="offset points", xytext=(-60, 0), ha='center', fontsize=8, arrowprops=dict(arrowstyle="-", color='black'))
         except ValueError as e:
             print("Specified point (2100, 20000) not found in the dataset.")
 
@@ -679,7 +698,7 @@ class ScenarioSweeper:
                                 [2060.31708066, 30000.]])
             ax.plot(coords_004[:, 0], coords_004[:, 1], color = "cyan", linestyle = '--', label='4%')  # 'w--' for white dashed line
 
-          
+            
 
             # Annotate for the year 2050 and income goal 9100 or rather 10000
             try:
