@@ -53,7 +53,7 @@ class Country():
                 self.carbon_intensity_trajectory = {}  # This is the (future) historical trajectory of the carbon intensity of the country
                 self.emissions_trajectory = {}  # This is the (future) historical trajectory of the emissions of the country
                 self.carbon_emissions_pc_trajectory = {}  # This is the (future) historical trajectory of the carbon emissions per capita of the country        
-
+                self.gini_coefficient_trajectory = {}  # This is the (future) historical trajectory of the gini coefficient of the country
 
                 # Dictionary mapping kwargs names to class attribute names
                 attribute_mapping = {
@@ -131,7 +131,7 @@ class Country():
                 self.carbon_intensity_trajectory[self.year] = self.carbon_intensity # this is the carbon intensity of the country
                 self.emissions_trajectory[self.year] = self.carbon_intensity * self.gdp_pc * self.population / 1000 # this is the emissions of the country, divide by 1000 to get to metric tons from kg
                 self.carbon_emissions_pc_trajectory[self.year] = self.carbon_intensity/1000 * self.gdp_pc # this is the carbon emissions per capita of the country in tonnes
-
+                self.gini_coefficient_trajectory[self.year] = self.gini_hh # this is the gini coefficient of the country
                 # add and save current decile incomes to the decile trajectories where every decile in the dictionary is another dictionary with the years as keys and the decile incomes as values
                 for decile_num in range(1, 11):
                         decile_income = getattr(self, f'decile{decile_num}_abs')
@@ -436,6 +436,31 @@ class Country():
                         self.diff_budget_and_emissions_ratio = (self.total_emissions / (self.carbon_budget_per_current_year*1e9))  # make units the same in tonnes so carbon budgets need to be in tonnes from gigatonnes 
                         if self.code == "USA":
                                 print("this is the ratio of emissions to budget of ", self.code, " ", self.diff_budget_and_emissions_ratio)
+        
+        def calculate_national_gini_coefficient(self):
+                        
+                        """
+                        Description: 
+                                A method computing the gini coefficient of the country as the relative absolute mean difference.
+        
+                        Parameters:
+                                None
+        
+                        """
+                        # Compute mean of income deciles 
+                        mean_income = sum([getattr(self, f'decile{decile_num}_abs') for decile_num in range(1, 11)]) / 10
+                        #denominator of the final formula
+                        denominator = 2 * 10**2 * mean_income
+                        # Loop over all deciles and compute the absolute difference to the other deciles
+                        numerator = 0
+                        for decile_num in range(1, 11):
+                                decile_income = getattr(self, f'decile{decile_num}_abs')
+                                for other_decile_num in range(1, 11):
+                                        other_decile_income = getattr(self, f'decile{other_decile_num}_abs')
+                                        numerator += abs(decile_income - other_decile_income)
+                        # Compute the gini coefficient
+                        self.gini_hh = numerator / denominator
+
 
         def __repr__(self): # This is the string representation of the object
                 # Retrieve the dynamic attributes by removing the 'country_' prefix and format them.

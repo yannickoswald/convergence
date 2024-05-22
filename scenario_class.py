@@ -59,6 +59,9 @@ class Scenario():
         # Initialize global outcomes storage
         self.gini_data = {"years": [], "population": [], "income": []}
 
+        # initialize the national gini coefficients holding place
+        self.national_gini_coefficients = None
+
     @staticmethod 
     def validate_assumption(params, key, valid_values):
         """
@@ -406,7 +409,15 @@ class Scenario():
                 self.gini_data["income"].append(income)
 
     def compute_gini_coefficient_change_rate(self):
-         
+
+            
+        """
+        Description: 
+                Compute global gini coefficient change rate over time.
+        Parameters:
+                None
+        """
+
         gini_data = pd.DataFrame(self.gini_data)
 
          # read out the columns population and income from gini data and plot each values as lorenz curve
@@ -443,7 +454,46 @@ class Scenario():
         gini_coefficient_change_rate = (0.01 / list_of_gini_coefficients[0]) ** (1 / (len(list_of_gini_coefficients) - 1)) - 1
 
         return gini_coefficient_change_rate
+    
 
+    def store_national_gini_coefficients(self):
+         
+        """
+        Description: 
+                Compute the national gini coefficients for all countries and store in a dataframe.
+        Parameters:
+                None
+        """
+        # pandas_data_frame that stores the gini coefficients for all countries with the region the country is in over all years where the years are the columns
+        gini_coefficients = pd.DataFrame(columns = ["country", "region"] + [str(year) for year in range(self.start_year, self.end_year)])
+        #
+        print("this is gini coefficients", gini_coefficients)
+        
+        # Function to insert a new country
+        def insert_country(df, country_name, country_region, gini_trajectory):
+                new_row = {'country': country_name, 'region': country_region}
+                # Merge new_row with gini_trajectory dictionary manually
+                for year, gini_value in gini_trajectory.items():
+                        new_row[year] = gini_value
+                # Convert new_row to a DataFrame
+                new_row_df = pd.DataFrame([new_row])
+                # Concatenate the new_row_df to the existing DataFrame
+                df = pd.concat([df, new_row_df], ignore_index=True)
+                print("this is df", df)
+                return df
+        
+        # loop over all countries
+        for country in self.countries.values():
+             # use insert_country function to insert the new country
+             gini_coefficients = insert_country(gini_coefficients, country.code, country.region, country.gini_coefficient_trajectory)
+
+        self.national_gini_coefficients = gini_coefficients
+
+        # Check if the resulting DataFrame has 150 rows
+        assert gini_coefficients.shape[0] == 150, f"Expected 150 rows, but got {gini_coefficients.shape[0]}"
+        # assert also columns are correct
+        assert gini_coefficients.shape[1] == 1 + 1 + (self.end_year - self.start_year), f"Expected {1 + 1 + (self.end_year - self.start_year)} columns, but got {gini_coefficients.shape[1]}"
+        print(gini_coefficients)
 
     def step(self):
             
@@ -461,6 +511,7 @@ class Scenario():
                 country.population_growth()
                 country.update_emissions()
                 country.calculate_current_carbon_budget()
+                country.calculate_national_gini_coefficient()
                 country.year += 1 # increase the year by one
                 country.save_current_state() # save the current state of the country
 
