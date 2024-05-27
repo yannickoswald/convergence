@@ -267,12 +267,15 @@ class Country():
                         # calculate the new income
                         # distinguish between steady state and non steady state assumption
                         if self.scenario.steady_state_high_income_assumption == "on":
+
                                 if decile_income >= self.scenario.income_goal:
                                         new_income = decile_income
                                 else:
                                         new_income = decile_income * (1 + cagr)
 
+                        # here the deciles that are already above the income goal are assumed to grow at the historical growth rate of the country        
                         elif self.scenario.steady_state_high_income_assumption == "on_with_growth":
+
                                 if decile_income >= self.scenario.income_goal:
                                         # if the income is already above the goal then apply the historical growth rate
                                         new_income = decile_income * (1 + self.gdp_pc_historical_growth)
@@ -296,7 +299,8 @@ class Country():
                 #################################################
                 if self.scenario.gdp_assumption == "constant_ratio":
                         ## just apply the empirically found ratio of gdp to mean household income
-                        self.gdp_pc =  self.hh_mean / self.gdp_hh_income_ratio                     
+                        self.gdp_pc =  self.hh_mean / self.gdp_hh_income_ratio                   
+                  
                 elif self. scenario.gdp_assumption == "model_ratio":
                         # the gdp ratio is conditional on the mean household income see script first data explorations
                         if self.hh_mean < 5000: # use piecewise linear fits from first data explorations for this, so yearly cons. exp/disposable income vs. gdp to mean household income ratio

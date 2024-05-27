@@ -177,19 +177,27 @@ class Scenario():
 
         start_year = self.start_year  # Assuming the scenario starts in 2023
         years_to_end = self.end_year - start_year
-        for country in self.countries.values():
-                # Compute the CAGR for the average income
-                average_income = country.hh_mean *365 # convert to annual household disposable income
 
-                # Compute CAGR
-                if average_income > 0 and years_to_end > 0:
-                        cagr = (self.income_goal / average_income) ** (1 / years_to_end) - 1
-                        #print("this is cagr", cagr)
-                else:
-                        cagr = 0  # Assigning 0 if the average income is 0 or years to end is not positive
-        
-                # Store the CAGR value for the country
-                country.cagr_average = cagr
+        if self.steady_state_high_income_assumption == "on_with_growth" or self.steady_state_high_income_assumption == "on":
+               for country in self.countries.values():
+                        #set positive dummy value just so that hysteresis is not triggered in the scenarios where it matters
+                        country.cagr_average = 0.01
+                
+        elif self.steady_state_high_income_assumption == "off":
+              
+                for country in self.countries.values():
+                        # Compute the CAGR for the average income
+                        average_income = country.hh_mean *365 # convert to annual household disposable income
+
+                        # Compute CAGR
+                        if average_income > 0 and years_to_end > 0:
+                                cagr = (self.income_goal / average_income) ** (1 / years_to_end) - 1
+                                #print("this is cagr", cagr)
+                        else:
+                                cagr = 0  # Assigning 0 if the average income is 0 or years to end is not positive
+                
+                        # Store the CAGR value for the country
+                        country.cagr_average = cagr
 
     def compute_average_global_hh_income(self):
             
@@ -460,40 +468,37 @@ class Scenario():
          
         """
         Description: 
-                Compute the national gini coefficients for all countries and store in a dataframe.
+                Compute the national gini coefficients for all countries and store in a dataframe with a scenario key etc.
         Parameters:
                 None
         """
-        # pandas_data_frame that stores the gini coefficients for all countries with the region the country is in over all years where the years are the columns
-        gini_coefficients = pd.DataFrame(columns = ["country", "region"] + [str(year) for year in range(self.start_year, self.end_year)])
-        #
-        print("this is gini coefficients", gini_coefficients)
-        
-        # Function to insert a new country
-        def insert_country(df, country_name, country_region, gini_trajectory):
-                new_row = {'country': country_name, 'region': country_region}
-                # Merge new_row with gini_trajectory dictionary manually
-                for year, gini_value in gini_trajectory.items():
-                        new_row[year] = gini_value
-                # Convert new_row to a DataFrame
-                new_row_df = pd.DataFrame([new_row])
-                # Concatenate the new_row_df to the existing DataFrame
-                df = pd.concat([df, new_row_df], ignore_index=True)
-                print("this is df", df)
+        scenario_gini_data = pd.DataFrame(columns=['scenario', 'country', 'year', 'gini'])
+
+        ### NECESSARY SUB PROCEDURE TO ADD A LIST TO A DATAFRAME
+        def add_list_to_dataframe(df, elements):
+                # Validate the input
+                #print(len(elements))
+                #print(len(df.columns))
+                if len(elements) != len(df.columns):
+                        raise ValueError("The number of elements must be exactly equal to the number of columns.")               
+                # Create a DataFrame from the list and append it to the existing DataFrame
+                new_df = pd.DataFrame([elements], columns=df.columns)
+                df = pd.concat([df, new_df], ignore_index=True)      
                 return df
-        
-        # loop over all countries
+
+        # loop over the countries and add each country with the concat() method to the dataframe
+        i = 0
+        scenario_id = str(self.income_goal) + '_' + str(self.end_year)
         for country in self.countries.values():
-             # use insert_country function to insert the new country
-             gini_coefficients = insert_country(gini_coefficients, country.code, country.region, country.gini_coefficient_trajectory)
-
-        self.national_gini_coefficients = gini_coefficients
-
-        # Check if the resulting DataFrame has 150 rows
-        assert gini_coefficients.shape[0] == 150, f"Expected 150 rows, but got {gini_coefficients.shape[0]}"
-        # assert also columns are correct
-        assert gini_coefficients.shape[1] == 1 + 1 + (self.end_year - self.start_year), f"Expected {1 + 1 + (self.end_year - self.start_year)} columns, but got {gini_coefficients.shape[1]}"
-        print(gini_coefficients)
+                for years, value in country.gini_coefficient_trajectory.items():
+                        countryvalues2 = [] # create empty list for current country values
+                        countryvalues2.append(scenario_id) # add scenario_id to the list
+                        countryvalues2.append(country.code) # add country code to the list
+                        countryvalues2.append(years)
+                        countryvalues2.append(value)   
+                        scenario_gini_data = add_list_to_dataframe(scenario_gini_data, countryvalues2)
+       
+        return scenario_gini_data
 
     def step(self):
             

@@ -137,7 +137,7 @@ class ScenarioSweeper:
 
 
 
-        return self.total_emissions, self.growth_rate_global, self.gini_coefficient_change_rate_global, self.final_emissions, self.gini_coefficient_national
+        return self.total_emissions, self.growth_rate_global, self.gini_coefficient_change_rate_global, self.final_emissions, self.gini_coefficient_national # self.national_gdp_ppp_pc, self.hh_consumption_pc, self.population
     
     def create_scenario(self, params):
         # Assuming Scenario is a class that takes a dictionary of parameters
@@ -359,8 +359,8 @@ class ScenarioSweeper:
         ax.annotate("2060\nCosta Rica\nscenario", (2060, 10000), textcoords="offset points", xytext=(68,33), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
 
         #PURE REDISTR. SCENARIO
-        ax.scatter(2060, 7000, s=100, c='black', marker='o', zorder = 5, label='Redistr. 2060')
-        ax.annotate("2060\npure\nredistr.", (2060, 7000), textcoords="offset points", xytext=(-60,15), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
+        #ax.scatter(2060, 7000, s=100, c='black', marker='o', zorder = 5, label='Redistr. 2060')
+        #ax.annotate("2060\npure\nredistr.", (2060, 7000), textcoords="offset points", xytext=(-60,15), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
 
         #OVERSHOOT COSTA RICA SCENARIO
         try:
@@ -372,7 +372,7 @@ class ScenarioSweeper:
             z_value = Z[y_pos, x_pos]
 
             # Step 3: Annotate this Z value on the plot
-            ax.scatter(x_values[x_pos], y_values[y_pos], color='red', s=100, zorder=5)  # Mark the point
+            #ax.scatter(x_values[x_pos], y_values[y_pos], color='red', s=100, zorder=5)  # Mark the point
             ax.annotate(f"Overshoot {z_value:.2f}", (x_values[x_pos], y_values[y_pos]), textcoords="offset points", xytext=(50, -5), ha='center', fontsize=8, arrowprops=dict(arrowstyle="-", color='black'))
         except ValueError as e:
             print("Specified point (2060, 10000) not found in the dataset.")
