@@ -179,6 +179,7 @@ class Scenario():
         years_to_end = self.end_year - start_year
 
         if self.steady_state_high_income_assumption == "on_with_growth" or self.steady_state_high_income_assumption == "on":
+               
                for country in self.countries.values():
                         #set positive dummy value just so that hysteresis is not triggered in the scenarios where it matters
                         country.cagr_average = 0.01
