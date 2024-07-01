@@ -48,6 +48,7 @@ class Country():
                 # Initialize dictionaries for the country's trajectories which is necessary data to be collected for plotting.
                 self.income_hh_trajectory = {}  # Necessary for plotting the trajectory of the countrys
                 self.gdppc_trajectory = {}  # Necessary for plotting the trajectory of the countrys
+                self.gdp_trajectory = {}  # Necessary for plotting the trajectory of the countrys
                 self.decile_trajectories = {}  # Necessary for plotting the trajectory of the countrys deciles here each dictionary entry is another dictionary with the years as keys and the decile incomes as values
                 self.population_trajectory = {}  # Necessary for plotting the trajectory of the countrys population
                 self.carbon_intensity_trajectory = {}  # This is the (future) historical trajectory of the carbon intensity of the country
@@ -127,6 +128,7 @@ class Country():
                         self.income_hh_trajectory[self.year] = self.hh_mean
                 
                 self.gdppc_trajectory[self.year] = self.gdp_pc # this is the mean gross domestic product per capita
+                self.gdp_trajectory[self.year] = self.gdp_pc * self.population # this is the gross domestic product of the country
                 self.population_trajectory[self.year] = self.population # this is the population
                 self.carbon_intensity_trajectory[self.year] = self.carbon_intensity # this is the carbon intensity of the country
                 self.emissions_trajectory[self.year] = self.carbon_intensity * self.gdp_pc * self.population / 1000 # this is the emissions of the country, divide by 1000 to get to metric tons from kg

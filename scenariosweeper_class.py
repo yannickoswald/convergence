@@ -62,6 +62,8 @@ class ScenarioSweeper:
         self.final_emissions = {}
         # national gini coefficients over time where the key is the scenario specified via the params and the value is the national gini coefficients over time
         self.gini_coefficient_national = {}
+        # national gdp trajectories over time where the key is the scenario specified via the params and the value is the national gdp trajectories over time
+        self.national_gdp_trajectories = {}
         
     def run_scenarios(self):
         
@@ -135,9 +137,11 @@ class ScenarioSweeper:
 
                     self.gini_coefficient_national[scenario_key] = scenario.store_national_gini_coefficients()
 
+                    self.national_gdp_trajectories[scenario_key] = scenario.store_national_gdp_trajectories()
 
 
-        return self.total_emissions, self.growth_rate_global, self.gini_coefficient_change_rate_global, self.final_emissions, self.gini_coefficient_national # self.national_gdp_ppp_pc, self.hh_consumption_pc, self.population
+
+        return self.total_emissions, self.growth_rate_global, self.gini_coefficient_change_rate_global, self.final_emissions, self.gini_coefficient_national, self.national_gdp_trajectories # self.national_gdp_ppp_pc, self.hh_consumption_pc, self.population
     
     def create_scenario(self, params):
         # Assuming Scenario is a class that takes a dictionary of parameters

@@ -525,6 +525,43 @@ class Scenario():
         
         self.create_global_population_and_income_vectors()
 
+    def store_national_gdp_trajectories(self):
+                
+                """
+                Description: 
+                        Store the national GDP trajectories for all countries in a dataframe.
+                Parameters:
+                        None
+                """
+                scenario_gdp_data = pd.DataFrame(columns=['scenario', 'country', 'year', 'gdp', 'gdppc'])
+        
+                ### NECESSARY SUB PROCEDURE TO ADD A LIST TO A DATAFRAME
+                # which takes the four elements of the dataframe and adds them to the dataframe
+                def add_list_to_dataframe(df, elements):
+                        # Validate the input
+                        if len(elements) != len(df.columns):
+                                raise ValueError("The number of elements must be exactly equal to the number of columns.")               
+                        # Create a DataFrame from the list and append it to the existing DataFrame
+                        new_df = pd.DataFrame([elements], columns=df.columns)
+                        df = pd.concat([df, new_df], ignore_index=True)      
+                        return df
+               
+                # loop over the countries and add each country with the concat() method to the dataframe
+                scenario_id = str(self.income_goal) + '_' + str(self.end_year)
+                for country in self.countries.values():
+                        for years, value in country.gdp_trajectory.items():
+                                countryvalues2 = []
+                                value2 = country.gdppc_trajectory[years]
+                                countryvalues2.append(scenario_id)
+                                countryvalues2.append(country.code)
+                                countryvalues2.append(years)
+                                countryvalues2.append(value)
+                                countryvalues2.append(value2)
+                                scenario_gdp_data = add_list_to_dataframe(scenario_gdp_data, countryvalues2)
+
+                return scenario_gdp_data
+          
+
     def run(self):
 
         """
