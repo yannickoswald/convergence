@@ -1,8 +1,8 @@
-# Global Convergence of Incomes in a Climate-Constrained World
+# Global convergence of incomes in a climate-constrained world
 
 ## Repository Overview
 
-This repository stores all code related to the paper **Oswald, 2024, Global Convergence of Incomes in a Climate-Constrained World** (in preparation/review).
+This repository stores all code related to the paper **Oswald, 2024, Global convergence of incomes in a climate-constrained world** (in preparation/review).
 
 All relevant output figures for this paper are produced in Jupyter notebooks. These notebooks employ the classes that represent the actual model, which are Python files.
 
@@ -34,7 +34,7 @@ To get started with the code, ensure you have the necessary dependencies install
 
 ```sh
 pip install -r requirements.txt
-
+```
 
 ## Usage
 
@@ -65,3 +65,20 @@ Each Jupyter notebook is designed to be run independently. Ensure you have the m
     ```sh
     jupyter notebook
     ```
+
+**Reporting Issues**
+
+    If you encounter any issues or have suggestions for improvements, please raise an issue on GitHub. To do so, follow these steps:
+    
+    1. Go to the repository's Issues page.
+    2. Click on the "New Issue" button.
+    3. Provide a descriptive title and detailed information about the issue.
+    4. Click "Submit new issue" to create the issue.
+
+**License**
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+**Contact**
+
+y-oswald@web.de
