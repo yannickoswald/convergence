@@ -34,3 +34,34 @@ To get started with the code, ensure you have the necessary dependencies install
 
 ```sh
 pip install -r requirements.txt
+
+
+## Usage
+
+Each Jupyter notebook is designed to be run independently. Ensure you have the model Python files in the same directory as the notebooks to avoid import errors.
+
+1. **Clone the repository:**
+
+    ```sh
+    git clone https://github.com/yourusername/global-convergence-incomes.git
+    ```
+
+2. **Navigate to the repository:**
+
+    ```sh
+    cd global-convergence-incomes
+    ```
+
+3. **Run the notebooks:**
+
+    Open any of the Jupyter notebooks using Jupyter Lab or Jupyter Notebook interface.
+
+    ```sh
+    jupyter lab
+    ```
+
+    or
+
+    ```sh
+    jupyter notebook
+    ```
