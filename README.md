@@ -38,7 +38,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-Each Jupyter notebook is designed to be run independently. Ensure you have the model Python files in the same directory as the notebooks to avoid import errors.
+Each Jupyter notebook is designed to be run independently. Ensure you have the model Python files in the same directory as the notebooks to avoid import errors. As well as the required data files.
 
 1. **Clone the repository:**
 
