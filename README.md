@@ -68,12 +68,12 @@ Each Jupyter notebook is designed to be run independently. Ensure you have the m
 
 **Reporting Issues**
 
-    If you encounter any issues or have suggestions for improvements, please raise an issue on GitHub. To do so, follow these steps:
-    
-    1. Go to the repository's Issues page.
-    2. Click on the "New Issue" button.
-    3. Provide a descriptive title and detailed information about the issue.
-    4. Click "Submit new issue" to create the issue.
+If you encounter any issues or have suggestions for improvements, please raise an issue on GitHub. To do so, follow these steps:
+
+1. Go to the repository's Issues page.
+2. Click on the "New Issue" button.
+3. Provide a descriptive title and detailed information about the issue.
+4. Click "Submit new issue" to create the issue.
 
 **License**
 
