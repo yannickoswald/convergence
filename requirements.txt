@@ -1,0 +1,12 @@
+
+# Data manipulation and analysis
+pandas
+
+# Plotting and visualization
+matplotlib
+
+# Jupyter notebook support
+jupyter
+
+# Additional package for enhanced Jupyter Notebook experience in VS Code
+jupyterlab

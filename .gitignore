@@ -180,10 +180,20 @@ __pycache__/
 #word docs
 *.docx
 
+
+# pdfs
+*.pdf
+
+# folders
+submission1/
 data/wid_all_data/
 other organizational/
 old/
 .vscode/
+figures/
 
+# files
+run_scenarios_for_energy_inequality.ipynb
+toy_model_elasticity_to_carbon_intensity.ipynb
+global_tech_rate_sweeping.ipynb
 
-# *.pdf
