@@ -15,6 +15,7 @@ All relevant output figures for this paper are produced in Jupyter notebooks. Th
 
 1. **scenariosweeper_class.py** - Necessary for 2-D trade-offs plots.
 2. **plots_class.py** - Contains methods for generating various plots.
+3. **
 
 ### Notebooks for Figure Outputs
 
