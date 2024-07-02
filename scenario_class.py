@@ -483,9 +483,15 @@ class Scenario():
                 if len(elements) != len(df.columns):
                         raise ValueError("The number of elements must be exactly equal to the number of columns.")               
                 # Create a DataFrame from the list and append it to the existing DataFrame
-                new_df = pd.DataFrame([elements], columns=df.columns)
-                df = pd.concat([df, new_df], ignore_index=True)      
+                # If the dataframe is empty, use DataFrame constructor
+                if df.empty:
+                        df = pd.DataFrame([elements], columns=df.columns)
+                else:
+                # Create a DataFrame from the list and append it to the existing DataFrame
+                        new_df = pd.DataFrame([elements], columns=df.columns)
+                        df = pd.concat([df, new_df], ignore_index=True)      
                 return df
+                        
 
         # loop over the countries and add each country with the concat() method to the dataframe
         i = 0
@@ -542,10 +548,15 @@ class Scenario():
                         if len(elements) != len(df.columns):
                                 raise ValueError("The number of elements must be exactly equal to the number of columns.")               
                         # Create a DataFrame from the list and append it to the existing DataFrame
-                        new_df = pd.DataFrame([elements], columns=df.columns)
-                        df = pd.concat([df, new_df], ignore_index=True)      
+                        # If the dataframe is empty, use DataFrame constructor
+                        if df.empty:
+                                df = pd.DataFrame([elements], columns=df.columns)
+                        else:
+                        # Create a DataFrame from the list and append it to the existing DataFrame
+                                new_df = pd.DataFrame([elements], columns=df.columns)
+                                df = pd.concat([df, new_df], ignore_index=True)      
                         return df
-               
+                
                 # loop over the countries and add each country with the concat() method to the dataframe
                 scenario_id = str(self.income_goal) + '_' + str(self.end_year)
                 for country in self.countries.values():
