@@ -28,6 +28,15 @@ All relevant output figures for this paper are produced in Jupyter notebooks. Th
 
 1. **clean_extend_pip_data.ipynb** - Processes and extends initial data for modeling.
 
+### Data files
+
+All necessary data files that are processed by the notebooks and model are in the folder data. There is only freely available data from the World Bank, the UN and processed data from IIASA SSP explorer. Please get in touch in case of issues loading the data or conflict of storing the data here.
+
+The original references are 
+    https://pip.worldbank.org/ (originally downloaded dataset included)
+    https://tntcat.iiasa.ac.at/SspDb/dsd?Action=htmlpage&page=welcome (originally downloaded dataset NOT included)
+    https://population.un.org/wpp/ (originally downloaded dataset included)
+
 ## Getting Started
 
 To get started with the code, ensure you have the necessary dependencies installed. You can set up your environment using the provided `requirements.txt` file.
