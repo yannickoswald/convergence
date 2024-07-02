@@ -12,10 +12,18 @@
      
 Supporting modelling files for plots are: 
 
- 1. scenariosweeper_class (necessary for 2-d trade-offs plots)
- 2. plots_class
+  1. scenariosweeper_class (necessary for 2-d trade-offs plots)
+  2. plots_class
 
 The notebooks pertaining to the figure outputs of the paper are:
 
- 1. 
+  1. first_data_explorations (This file contains a lot of initial data checks but also FIGURE1)
+  2. run_figure2
+  3. run_figure3
+  4. run_figure4
+  5. run_figure5
+
+Notebooks that contain pre-modelling data processing are
+
+  1. clean_extend_pip_data
  
