@@ -169,7 +169,7 @@ class ScenarioSweeper:
         if ax is not None and isinstance(ax, str) and re.match(r'ax\d+', ax):
             ax_index = int(re.search(r'\d+', ax).group())
 
-        print("this is the ax_index", ax_index)
+        #print("this is the ax_index", ax_index)
 
         if len(variables_considered) != 2:
             raise ValueError("variables_considered must contain exactly two elements")
@@ -208,7 +208,7 @@ class ScenarioSweeper:
             y_index = y_values.index(params_dict[variables_considered[1]])
             Z[y_index, x_index] = value
         
-        print("this is the Z", Z)
+        #print("this is the Z", Z)
 
         # Define color ranges for values below and above the threshold
         colors_below = ['#4575b4', '#91bfdb']  # Blue shades for values below 1
@@ -265,7 +265,7 @@ class ScenarioSweeper:
         else:
             fig = ax.get_figure()
             current_axis = ax
-            print("this is the current_axis", current_axis)
+            #print("this is the current_axis", current_axis)
 
         contour = ax.contourf(X, Y, Z, **contourf_kwargs)
         if colorscaleon:
@@ -382,20 +382,20 @@ class ScenarioSweeper:
             print("Specified point (2060, 10000) not found in the dataset.")
 
         #OVERSHOOT PURE REDISTR. SCENARIO
-        try:
+        #try:
             # Step 1: Find the indices for x = 2060 and y = 7000
-            x_pos4 = x_values.index(2060)
-            y_pos4 = y_values.index(7000)
+        #    x_pos4 = x_values.index(2060)
+         #   y_pos4 = y_values.index(7000)
 
             # Step 2: Use these indices to find the Z value
-            z_value4 = Z[y_pos4, x_pos4]
-            print("this is Z", Z)
+          #  z_value4 = Z[y_pos4, x_pos4]
+           # print("this is Z", Z)
 
             # Step 3: Annotate this Z value on the plot
-            ax.scatter(x_values[x_pos4], y_values[y_pos4], color='red', s=100, zorder=5)  # Mark the point
-            ax.annotate(f"Overshoot {z_value4:.2f}", (x_values[x_pos4], y_values[y_pos4]), textcoords="offset points", xytext=(45, -5), ha='center', fontsize=8, arrowprops=dict(arrowstyle="-", color='black'))
-        except ValueError as e:
-            print("Specified point (2060, 7000) not found in the dataset.")
+            #ax.scatter(x_values[x_pos4], y_values[y_pos4], color='red', s=100, zorder=5)  # Mark the point
+            #ax.annotate(f"Overshoot {z_value4:.2f}", (x_values[x_pos4], y_values[y_pos4]), textcoords="offset points", xytext=(45, -5), ha='center', fontsize=8, arrowprops=dict(arrowstyle="-", color='black'))
+        #except ValueError as e:
+         #   print("Specified point (2060, 7000) not found in the dataset.")
 
         ######## additional annotations that should be only introduced for figure 3 but not figure 4  ########
         if annotations_plot:

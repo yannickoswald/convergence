@@ -45,8 +45,8 @@ class Plots():
         fig, ax = plt.subplots(1, 2, figsize=(15, 5))
 
         # on the left panel plot income_hh_trajectory and gdp_pc_trajectory dictionaries where the keys are the years and the values are the income and gdp per capita respectively
-        print(list(country.income_hh_trajectory.keys()))
-        print(list(country.income_hh_trajectory.values()))
+        #print(list(country.income_hh_trajectory.keys()))
+        #print(list(country.income_hh_trajectory.values()))
 
         ax[0].plot(list(country.income_hh_trajectory.keys()), list(country.income_hh_trajectory.values()), color = "tab:orange")
         ax[0].plot(list(country.gdppc_trajectory.keys()), list(country.gdppc_trajectory.values()), color = "tab:blue")
@@ -103,7 +103,7 @@ class Plots():
                 last_char = str(decile_num)[-2:]
             else:
                 last_char = str(decile_num)[-1] 
-            print(last_char)
+            #print(last_char)
             # Plot and collect the handle
             handle, = ax.plot(list(decile_data.keys()), list(decile_data.values()), label=f'Decile {last_char}')
             # Append handle and label to the lists
@@ -421,7 +421,7 @@ class Plots():
             script_dir = os.path.dirname(os.path.abspath(__file__))
             file_path = os.path.join(script_dir, 'data', 'pip_all_data', 'gdp_pc_empirical_trend.csv')
             data_empirical = pd.read_csv(file_path, sep=";", encoding='unicode_escape')
-            print(data_empirical)
+            #print(data_empirical)
         except FileNotFoundError:
             print("File not found. Please ensure the file path is correct.")
             return  # Exit the function if file is not found
