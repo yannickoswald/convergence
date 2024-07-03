@@ -132,7 +132,7 @@ class ScenarioSweeper:
                     # Calculate the gini coefficient change rate for the current scenario (VERY COMPUTATIONALLY EXPENSIVE)
                     #self.gini_coefficient_change_rate_global[scenario_key] = scenario.compute_gini_coefficient_change_rate()
 
-                    self.final_emissions[scenario_key] = scenario.compute_ending_global_emissions_above_linear_budget()
+                    self.final_emissions[scenario_key] = scenario.compute_ending_global_emissions()
 
 
                     self.gini_coefficient_national[scenario_key] = scenario.store_national_gini_coefficients()
