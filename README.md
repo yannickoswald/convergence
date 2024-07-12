@@ -55,7 +55,7 @@ Each Jupyter notebook is designed to be run independently. Ensure you have the m
 1. **Clone the repository:**
 
     ```sh
-    git clone https://github.com/yourusername/global-convergence-incomes.git
+    git clone https://github.com/yannickoswald/global-convergence-incomes.git
     ```
 
 2. **Navigate to the repository:**
