@@ -1,0 +1,319 @@
+\documentclass{article}
+\usepackage{fontspec}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage[section]{placeins}
+\usepackage[export]{adjustbox}
+\setlength\parskip{1\baselineskip}
+\usepackage[parfill]{parskip}
+\usepackage{amsmath}
+\usepackage{amsfonts} % for \mathbb
+\usepackage{hyperref}  % makes links in the pdf to sections, references, etc. (can be configured to change colour, remove boxes,e tc)
+\usepackage{authblk}
+\usepackage{cleveref}
+\hypersetup{pdfborder={0 0 0} } % This turns off the stupid colourful border around links
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage[
+backend=biber,
+style=authoryear-comp,
+]{biblatex}
+\usepackage{todonotes}
+\usepackage{xcolor}
+% Set main font to Source Serif Pro
+\setmainfont{Source Serif Pro}
+% Load setspace package for line spacing
+\usepackage{setspace}
+\usepackage{geometry}
+% Set the margins to be the same for all pages
+\geometry{top=1in, bottom=1in, left=1in, right=1in}
+% Set line spacing to 1.5
+\setstretch{1.5}
+\usepackage{datetime}
+\newdateformat{monthyeardate}{%
+  \monthname[\THEMONTH], \THEYEAR}
+  
+% for roman numerals in a list item 
+\usepackage{enumitem}
+\usetikzlibrary{fit,matrix,positioning}
+\addbibresource{references.bib} %Imports bibliography file
+\PassOptionsToPackage{hyphens}{url}\usepackage{hyperref}
+
+
+\title{\textbf{Global income convergence in a climate-constrained world}}
+\author[1]{anonymized}}
+
+}
+
+
+\date{\monthyeardate\today}
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+Global economic convergence is critical for international justice and increasingly called for in international policy discourse. Research has explored various climate-economic scenarios, but little has been said about how radical and universal income convergence, to levels such as those in Europe, may impact the climate. Taking into account both between-country and within-country inequality, I explore the carbon emissions of stylized global income convergence scenarios in a deterministic data-driven model. I find that global emissions depend on the desired income level, the time horizon and assumptions about carbon intensity evolution. Moreover, I find that income reductions of high-income groups could contribute to climate mitigation in convergence scenarios but only extremely fast, economy-wide, decarbonization can make climate targets fully achievable in those scenarios. This is especially true if the level of income convergence is very high. For example, if the entire world were to converge to the current level of income in Denmark by the year 2100. In this case, the model shows that the convergence process alone would overshoot the 2 degree budget by 60\% without reaching net-zero emissions, even assuming a long-run carbon-intensity reduction rate of -5\% for all countries, currently the best empirically observed value. Only a long-run average carbon intensity reduction rate of approximately -11\% or faster each year, seven times the historical global average, enables the Denmark-level convergence scenario to stay within the two-degree budget while also reaching net-zero emissions. 
+
+\end{abstract}
+\section{Introduction}
+
+Global emissions are a result of economic activity and emission inequalities reflect economic ones \parencite{chancel2022global, hubacek2017global, oswald2020large, ravallion2000carbon, hailemariam2020carbon, knight2017wealth}. The global inequality in emissions per person also highlights a systemic injustice in terms of mitigation as well as adaptation, as the ones being affected most by global warming are often the ones least responsible for it
+\parencite{althor2016global}. Despite this knowledge about contemporary economic inequalities and their direct relationship with climate change, most popular socio-economic scenarios maintain substantial inequalities between countries. For example, the widely used Shared Socio-economic pathways (SSPs), which prominently inform the IPCC, all maintain substantial economic inequalities between Global North and Global South countries \parencite{benveniste2021tracing} as well as within countries \parencite{rao2019income}. The level of future economic inequality in these scenarios varies strongly, SSP1 reaches an international Gini coefficient of less than 0.2 in 2100 and SSP4 over 0.5 (the latter being similar to today's global inequality), but there are no climate-economy scenarios that reduce inequalities to virtually zero. From a policy point of view, leadership from the Global South, for example the African Union, has recently called this lack of radically distinct economic scenarios into question and called for a "paradigm shift" to get rid of "neo-colonial assumptions" \parencite{africanarguments2024modelling}. Relatedly, previous climate-economy models feature drastic changes in climate policy and the ensuing energy system based on estimated carbon budgets, but together with historically grounded continuations of economic growth \parencite{riahi2017shared}. This means, the energy system is transformed radically in line with normative judgments about how fast emissions have to be reduced to avoid a climate disaster, but the economic logic of scenarios itself is not normatively upended. Instead scenarios satisfy a degree of "economic realism" with respect to the historic and ongoing compound economic growth for all countries regardless of current income level. This is problematic as this kind of universally growth-oriented set-up introduces the need for speculative technological assumptions such as implausible speed in the increase of energy efficiency and rapid decoupling between energy use and emissions as well as unproven technologies such as Carbon Dioxide Removal at scale \parencite{lamb2024carbon}. Therefore, in this work, I suggest to turn this logic on its head. I normatively set economic growth pathways for different countries aimed at full Global North and Global South income convergence as well as income convergence within countries but employ justifiable assumptions about the pace of decarbonization and the relationship of economic growth, population and technology. This then also entails income reductions for current high-income groups and perhaps even for entire countries depending on the scenario. This is a possibility often brought forward by degrowth proponents \parencite{hickel2021does}. It is important to acknowledge that degrowth is not simply about income or GDP reductions but primarily about reductions in energy and resource use while also being about a cultural shift towards "progressive" values (e.g. decolonialization of economic relations). However downscaling of income and consumption among the wealthy is often pointed out as one way to do achieve said energy and emission reductions - hence for the remainder of the results I label these income reductions among high-income groups as degrowth for brevity and simplicity.
+%At the same time, I  test different assumptions about the rate of national decarbonization, the relationship between technological progress and economic growth, population growth and national incomes as well as the specific trajectory for high-income groups. 
+Of course, this does not mean that the proposed and investigated scenarios are more realistic than existing ones, especially from a political-economy point of view. Indeed, instead of introducing speculative assumptions about technological change, they introduce (implicitly) speculative assumptions about the political and economic trajectories of nations. The here investigated scenarios are, therefore, simply distinct in their character and are aimed at complementing the existing scenario space rather than defining feasible policy. Given international justice considerations and the urgency of the climate crisis, all options should be explored.
+
+Moreover, there is recent literature around the topic of decent living energy which entails nearly complete energy equality \parencite{millward2020providing, kikstra2021decent} as well as one static income convergence experiment that analyses energy demand outcomes \parencite{oswald2021global} but so far these are not dynamic models specifying pathways and they also do not specify whether carbon budgets will be used up or not in the meantime. There are also several studies that estimate the climate impacts of economic development and conclude that eradicating extreme poverty does not threaten climate goals \parencite{hubacek2017poverty, wollburg2023ending} but that higher income thresholds might be difficult to achieve while respecting climate goals. For example, \textcite{bruckner2022impacts} show that while eradicating extreme poverty, so lifting everyone globally to at least \$PPP 2.1 consumption expenditure per capita per day, has negligible impacts on global emissions, yet lifting everyone to \$PPP 5.5 would add more than 15\% to global emissions given a short-term view on techno-economic parameters. Both these thresholds are controversially low though, since it is not clear whether crossing them represents a substantial improvement in well-being \parencite{edward2006ethical} and they are extremely low compared to Global North living standards. In Europe, for instance, people live between \$PPP 30pc (Eastern Europe) and \$PPP 70pc (Norway) on average depending on the country and it has been suggested that such high thresholds must be crossed for substantial improvements in well-being \parencite{owid-poverty-minimum-growth-needed}.  %Hence by this logic reducing global poverty requires raising incomes substantially beyond this threshold in any case, as for example suggested by the economist Max Roser \textcite{owid-poverty-minimum-growth-needed}. One of Roser's specific proposals is the consumption level of Denmark \$55 (probably based on the assumption that life in Denmark is on average very good). Given that this is 10x the level that \textcite{bruckner2022impacts} identify as increasing global emissions by 15\%, it is more than likely that this level of universal development directly conflicts with climate goals, at least if carbon emissions for the top emitters are not curbed dramatically.
+
+Overall, I approach the following questions: Is global universal economic convergence possible given climate targets? How much carbon is emitted by the time of income convergence? Are emission budgets overshot by the time convergence is completed? How close do income convergence pathways come to zero emissions? Does it help if high-income countries and groups reduce their consumption levels? Does the time horizon matter, that is whether full income convergence is achieved until 2050, 2075 or 2100? I develop and employ a parsimonious model for the purpose of studying income convergence pathways and corresponding emission outcomes. The model is computational, deterministic and data-driven and explores the parameter space and the corresponding trade-offs. The model relies on household disposable income and consumption expenditure data of the World Bank \parencite{pip2024}. Hence when I mention "income", if not specified otherwise, in this study I refer to disposable household income or even consumption expenditure per person for brevity. I find that both, the income level as well as the time horizon, matter greatly for the feasibility with respect to carbon budgets. The slower global income convergence happens and the lower the income level aimed for, the easier it generally is. This is because more economic output translates to more emissions and the more time passes until convergence is achieved, the slower economic growth is and the more time there is to advance decarbonization (that is to reduce the carbon intensity per dollar output). Moreover, it matters whether all groups above any specified income goal continue to grow their incomes, remain at a steady-state of income or converge their income level down to the specified average. The speed of technological evolution matters even more - only extreme, and empirically unprecedented carbon intensity declines, enable a large set of climate-feasible income convergence scenarios. At historically plausible carbon intensity decline, the largest amount of scenarios becomes feasible with respect to carbon emissions when income reductions for the groups above the level of convergence are assumed.
+
+\section{The model}
+
+
+
+\subsection{Model overview and general scenario design}
+
+The model evolves a set of 150 countries under a certain scenario \( s \) (see data section for why 150 countries). Let \( \mathcal{C} = \{ C_1, C_2, \ldots, C_{150} \} \) represent the countries. Each country \( C_i \) has a vector of features \( \mathbf{f}_{t,s} \) that evolves over time \( t \) under scenario \( s \), where \( \mathbf{f}_{t,s} = [f_{1,t,s}, f_{2,t,s}, \ldots, f_{n,t,s}] \) with \( n \) features. Moreover, every scenario is initialized with the help of the following parameters: (i) The income goal \( I_{\text{goal}} \) to be reached for all countries. (ii) The time horizon \( T \) until that income goal is achieved. (iii) A vector of variable assumptions \( \mathbf{A}_{s} = [a_{1,s}, a_{2,s}, \ldots, a_{m,s}] \), where each \( a_{k,s} \) represents an assumption that can vary across scenarios. The variable assumptions include things like the speed of decarbonization that countries can reach or whether income-degrowing countries can achieve fast decarbonization via the path-dependency hypothesis specified in figure \ref{Figure 1: From historical income correlates and to future convergence paths} Panel C.
+
+Carbon budgets are given exogenously and serve as an evaluation parameter but not as an absolute constraint. Emissions are therefore the outcome variable based on the other parameters and not the other way around as is often the case in integrated assessment models where the global trajectory of the energy system and so forth is subject to the carbon budget. Here, the income goal and the time horizon are the absolute constraints that everything else is subject to. This constitutes a departure from current models and mainstream scenarios.
+
+Moreover, instead of focusing on a few lead scenarios, like the Shared Socio-economic Pathways for instance do, in this work I explore the parameter-space of  (i) income level towards which countries and groups converge (e.g. \$PPP 30pc consumption expenditure a day or \$PPP 50pc and so forth) and (ii) time horizon (for example whether convergence happens until 2050, 2075 or 2100 and so forth) in a systematic quantified sense without  elaborating on "narratives". Convergence narratives could potentially be introduced thereafter. Concretely, I test four different time horizons 2040, 2060, 2080, 2100 and six different income levels \$5000 to \$30000. Thus, there are have 24 different scenario combinations. The results are mostly depicted as heatmaps that interpolate these 24 grid points. Following this, I probe what the feasible sub-set of scenarios is given known carbon budgets. The goal is to explore the general space of income convergence scenarios and what parameter specifications might be desirable or feasible. All scenarios tested also employ the following endogenous parameters: (iii) technology evolution and (iv) population trajectories which are specified in sections \ref{Population change} and 
+\ref{Technology change}.
+
+\subsection{Data and calibration}
+
+The data to calibrate the initial income conditions of the model has been sourced from the Poverty and Inequality Platform of the World Bank \parencite{pip2024}. This database offers comprehensive household disposable income decile data for around 170 countries in the world over several years and in Purchasing Power Parity (PPP). The welfare type of this data varies with some data representing consumption expenditure per capita and others disposable household income. For this study however, we assume that these concepts are interchangeable. This is a justifiable assumption because they are mostly very similar for low-income countries, because income saving rates are low, and for high-income countries most often consumption expenditure is reported. On top of that, the data is not always up-to-date, but ends in a year between 2011 and 2020. I then nowcasted the mean of the data to 2022 via GDP growth rates (in PPP), assuming that the distribution across income deciles is fixed. Thus the model begins in 2023.
+
+Due to other data constraints, such as for which country does the World Bank provides emission data, I arrive at 150 countries in the model. This covers roughly 7.5 billion people in 2022 which is a population coverage of approximately 94 \% \parencite{owid_population2024} and a similar percentage figure of global GDP \parencite{worldbank_gdp2024}.
+
+All other initializing data on population, emissions and therewith carbon intensities is sourced from the World Bank too for consistency. The World Bank in turn sources its emissions data world from the Climate Watch which is notably distinct to the emissions data from the Global Carbon Project \parencite{globalcarbonproject}. For instance, concerning the USA, emissions per capita differ by 2 tonnes between the sources which is likely due to differences in accounting for land use change which exhibits the highest uncertainty \parencite{climatewatch_ghg2024}.
+
+\subsection{Country income and emission trajectories}\label{Country income and emission trajectories}
+
+The main state variables that the model evolves for each country are the income deciles as follows: 
+Let \( D_{k,t,s} \) represent the income of the \( k \)-th decile for country \( C_i \) at time \( t \) under scenario \( s \), where \( k = 1, 2, \ldots, 10 \). Each decile evolves towards the scenario specific income goal \( I_{\text{goal},s} \) via a Compound Annual Growth Rate (CAGR).
+
+The CAGR for the \( k \)-th decile is given by:
+
+\begin{equation}
+\text{CAGR}_{k, s} = \left( \frac{I_{\text{goal},s}}{D_{k,0}} \right)^{\frac{1}{T}} - 1 
+\end{equation}
+
+The income of the \( k \)-th decile at any time \( t \) is:
+
+\begin{equation}
+D_{k,t,s} = D_{k,0} \times (1 + \text{CAGR}_{k, s})^t 
+\end{equation}
+
+Theoretically one could also define trajectories via growth rates other than a CAGR, for instance employing linear decile trajectories. However at this stage a (constant) percentage rate change per year is a sensible option and a justifiable assumption based on how economic growth is usually measured the same way. 
+
+Based on the decile trajectories, I derive total household income in a country. There is a systematic relationship between the total household income in a country and GDP which helps deducing GDP. For low- to middle-income countries the ratio between the two varies and for high-income countries usually is around 45\% (see supplementary figure 3). There are two options to arrive at total GDP over time for a country: (i) either assume the empirically ascertained ratio to be fixed over time or (ii) dynamically determine the ratio based on the empirical cross-country relationship. However, I did not find that this difference in assumptions influences the results notably, so I opted for the simpler version with the fixed ratios. 
+Each country \(i\) has a fixed ratio \( \alpha_i \) between total household income \( H_{i,t,s} \) and GDP \( G_{i,t,s} \).
+
+\begin{equation}
+ G_{i,t,s} = \alpha_i \cdot H_{i,t,s} 
+\end{equation}
+
+
+To calculate the total emissions for each country, I multiply the GDP by the country-specific carbon intensity \( \beta_{i,t,s_j} \).
+
+\begin{equation}
+E_{i,t,s} = \beta_{i,t,s}\cdot G_{i,t,s} 
+\end{equation}
+
+Therefore, ultimately the national emissions are dependent on national GDP. What info do the deciles provide then? The income distribution across deciles determines how many people either degrow their income, remain at a steady-state or continue to grow, and so they determine total GDP. Thus emissions are distribution-dependent but only in a "weak sense". This is not unreasonable, however, since effectively, the income carbon elasticity is equal to one given these assumptions. One dollar reduction of consumption in the last decile reduces national emissions by exactly as much as in the first decile. From empirical evidence we know that for household consumption alone the national carbon elasticity is lower than one in most cases \parencite{pottier2022expenditure}.  However with respect to full GDP, as in this model, and accounting for the carbon-implications of investments, which often are primarily due to the upper income classes and hence have a larger than unity income elasticity \parencite{chancel2022global}, it is reasonable to assume a linear relationship, which balances these two effects. Still, this is an assumption that could be revisited in upfollowing work. One could, for instance, distinguish by country. For this model in particularly, one would need the carbon intensity of household consumption separately from the carbon intensity of the rest of GDP and hence this definitely introduces a more complex framework especially when considering the far future where it is not clear how these relationships change. Hence the here chosen framework requires few assumptions and maintains a close relationship to reality.
+
+\subsection{Population change}\label{Population change}
+
+Population growth is assumed to be uniform across income deciles. If a country's average economic growth is positive, the model employs the empirically determined cross-country pattern from figure \ref{Figure 1: From historical income correlates and to future convergence paths} panel B between income and population change. If the average economic growth rate is negative, I assume path-dependency and the country remains at its 2022 population growth rate.  
+
+The relationship between country income and net population growth rate \(\Delta{p}\) is as follows:
+
+\begin{equation}
+\Delta{p} = b \cdot \log_{10}(\text{gdp pc}) - a
+\end{equation}
+
+And under decreasing GDP per capita and path-dependency as follows.
+
+\begin{equation}
+\Delta{p} = \text{constant}
+\end{equation}
+
+This is a justifiable assumption because we would not expect, Europe for example, to change its socio-cultural circumstances the same way with decreasing GDP, as they have changed with increasing GDP over the course of history. At the very least this is an implicit assumption in the degrowth literature, that aggregate income degrowth would be accompanied by even more progressive socio-cultural structure and not more regressive one \parencite{buchs2019challenges, hickel2020less}. Notably, I find that a change to no-path-dependency in population growth only negligibly influences results.
+
+Lastly, I also tested population trajectories provided by the United Nations (which are also employed by the SSPs) and they can be switched in as an alternative assumption. However, I do not think it is a justifiable assumption to employ exogenously provided population trajectories, given that we know that population growth and income level are strongly related, while changing income levels drastically. The consequences of employing the medium UN population trajectory are also of minor weight in any case - while numerical results do change somewhat the overall conclusions remain robust (compare Supplementary Figure 2).
+
+\subsection{Technology change}\label{Technology change}
+
+I assume carbon intensity to be a proxy for the relevant technological change - that is technology that relates to energy technology and resource efficiency.
+
+The carbon intensity \(c_i\) evolves at a country-specific and time-dependent rate \(\lambda_{i,t}\) (for country \(i\)).
+
+\begin{equation}
+c_i = c_i \cdot (1 + \lambda_{i,t})
+\end{equation}
+
+The initial value of \(c_i\) is just the empirically given value for 2022.
+
+The rate \(\lambda_{i,t}\) is a weighted average of the empirically determined and country-specific rate \(r_{i,t}\) in figure \ref{Figure 1: From historical income correlates and to future convergence paths} panel A and a scenario specific global technology change parameter \(z\).
+
+
+\begin{equation}\label{weighted_average}
+\lambda_{i,t} = (1 - w(t)) \cdot r_{i,t} + w(t) \cdot z
+\end{equation}
+
+This is so because I assume the recent past behavior of nations, captured in \(r_{i,t}\), to be only a good predictor for the short-term future. For the long-term, I make qualitative and scenario-dependent assumptions about how fast the global energy transition is to progress and that is what the rate \(z\) represents. The variable \(z\) is a uniform global rate of carbon intensity change that all countries adopt over time. Note that \(z\) therefore does not determine the carbon intensity of the world-economy itself, but only the speed of decarbonization per dollar of output from the specified initial conditions. To attain plausible and comparable parameter values for \(z\), I employ rates similar to the carbon intensity change rates found in the Shared-Socio-Economic Pathways (SSPs) for different scenarios. Moreover the weights \(w(t)\) and \(1 - w(t)\) themselves are time-dependent and adjustable with respect to "transition" speed because they change as a logistic function of time. This ensures flexibility for this parsimonious model framework. 
+
+\begin{equation}
+w(t) = \frac{1}{1 + e^{-k(t - t_0)}}
+\end{equation}
+
+Thus for \(\lim_{{t \to \infty}} w(t) = 1 \).  The parameter \(t_0\) which specifies the mid-point of the logistic curve is set at 2060 for all scenario analysis which is a medium-case assumption. Furthermore, the parameter \(k\), the steepness of the logistic curve, is set to a low value with 0.05 which ensure a slow transition from the historical rate \(r_{i,t}\) of countries to the global parameter \(z\)
+
+Lastly, the rate \(r_{i,t}\) is determined as follows.
+
+\begin{equation}
+r_{i,t} = y \cdot \log(\text{gdp pc}) + x 
+\end{equation}
+
+For the carbon intensity decline I also assume path-dependency when a country on average degrows. If a country enters an aggregate income reduction phase, in other words a "planned" degrowth phase, then it immediately reduces its carbon intensity by the rate \(z\), so independent of the past growth-induced change rates. This is a justifiable assumption because, according to the degrowth literature \parencite{hickel2021does}, if a country indeed would follow a planned degrowth trajectory, it would be expected to invest into renewable energy and other decarbonization technology, while reducing aggregate income mainly from other sectors that are deemed less "necessary" (such as fossil fuels, automobile industry, financial industry and others). This assumption also can be switched off, and is found to not influence the results critically as depicted in Supplementary Figure 2.
+
+
+\section{Results}
+
+\subsection{From historical income correlates to convergence pathways}
+
+Environmental impact, including emissions, can be decomposed into the three drivers population, affluence (e.g. income) and technology. In the here employed model, I set the affluence trajectories exogenously, and there is abundant evidence that affluence shapes population growth as well as technological progress, or at least, technology access. Hence, a sufficiently plausible model requires plausible assumptions about how affluence, population and technology interact. While I described those already above in \ref{Population change} and \ref{Technology change}, the first set of results concerns and justifies these interactions and is depicted in figure \ref{Figure 1: From historical income correlates and to future convergence paths}. I find that net population growth, excluding migration, exhibits a robust negative correlation with national GDP per capita (panel B) in agreement with \textcite{murphy2021energy}. This relationship has been verified many times although recent evidence hints at a weakening of the relationship within and between countries \parencite{doepke2023economics}. It is important to clarify that this correlation likely acts via several intermediary causal factors such as the empowerment of women, for example, increased work place participation  \parencite{owid-fertility-rate}. Therefore, to employ this relationship for the projection of hypothetical income convergence futures in which many countries increase their income and some may reduce it, requires a cautionary approach. While it is plausible that, based on historical experience, countries which become richer in the future, on average also exhibit a corresponding shift of socio-economic conditions, that will drive fertility rates down, there is no reason to assume that countries who are currently rich and would embrace planned income reductions also would reverse fertility rates along the same path. Instead one would expect path-dependency. For fertility rates, and hence population growth, this is depicted in Panel C of Figure \ref{Figure 1: From historical income correlates and to future convergence paths} on the right. 
+
+Another, more difficult to ascertain, relationship is the one between national income, innovation and technology access. %First and foremost, it is notable that many of the current high-income countries exhibit an inverse U-shape relationship between GDP per capita and Emissions per capita in the very long-term - that is from the start of the industrial revolution in the late 1700s to now, as can be for example observed in the data curated at \textcite{owid-co2-and-greenhouse-gas-emissions} 
+Decarbonization among high-income countries has been faster over the recent past than among low- and middle-income countries. I find a negative weak to moderate correlation between absolute income level and the compound annual change rate of the carbon intensity (as kg of CO2 per dollar of GDP) in the decade from 2010 to 2020. High-income countries reduced their carbon intensity systematically faster. From 2010 to 2020 most countries exhibited yearly carbon intensity change rates ranging from +5\% to -5\%. However, there is no reason to expect this pattern to hold in the long-term. Historically, income growth was correlated with increased carbon emissions, subsequently often with stagnant per capita emissions levels and only recently a decrease. Instead, again we would expect path-dependency for the relationship between national income and the emissions per capita in convergence scenarios. Rich economies that scale down their aggregate production likely still maintain fast decarbonization rates - at least so goes the argument by degrowth proponents - and hence this assumption should be explicitly modelled (with an option to switch it off). 
+
+Lastly, I did compare the empirically measured carbon intensity declines during the decade 2010 to 2020 with the average global carbon intensity declines in the Shared Socio-economic Pathways (SSPs). The SSP carbon intensity change varies over time, so in figure \ref{Figure 1: From historical income correlates and to future convergence paths}, I depict the median for each SSP (one to five) from the distribution over time for the time period 2020 to 2100. All SSPs decrease the global average carbon intensity. At no time an increase occurs. They also mostly fall in range with the emprically observed data across countries. In SSP2, SSP3, SSP4 and SSP5 the global carbon intensity declines between -0\% and - 5\% yearly. Only SSP1 is substantially more optimistic - with its median assumption nearly being -10\%. The maximum decadal carbon intensity decline in SSP1 is -17\% (For the distribution of carbon intensity declines in the SSPs observe supplementary figure 1). Later on, I test various carbon-intensity decline assumptions similar to the range indicated by the SSPs.
+
+\begin{figure}[hbt!]
+\centering
+ \includegraphics[width=14cm, height=12cm]{fig1.png}
+  \caption{From historical income correlates and to future convergence paths}
+  \label{Figure 1: From historical income correlates and to future convergence paths}
+  \medskip
+\small 
+Panel A shows the correlation between income level in 2022 and the carbon intensity average (positive or negative) growth rate from 2010 to 2020. It does not matter whether the income level in 2022 is chosen or any other year ranging from 2010 to 2022. The correlation remains. Panel A also depicts the median of the global carbon intensity decline rates from the Shared Socio-Economic Pathways (SSPs) as horizontal lines. Panel B shows the correlation between absolute country income level and net population growth rate in 2021. Panel C illustrates stylized versions of the empirical historical relationships between income and emissions as well as income and fertility rate. It also shows the modelling assumptions about path-dependency (future hysteresis) between national income per capita and emissions as well as between income per capita and fertility rates.
+\end{figure}
+
+\FloatBarrier
+
+\subsection{Economic logic of convergence scenarios}
+
+In this section, the economic logic of convergence scenarios is illustrated. For comparison with the SSPs and also the current state of the world, I make use of two illustrative scenarios in Panel A figure \ref{Figure 2: Economic logic of convergence scenarios} (orange bubbles): (i) Costa Rica 2100 means that the entire world convergences to the average household consumption expenditure per person of Costa Rica (in 2022) by 2100 and (ii) Denmark 2100 means the entire world converges to the average Danish household consumption expenditure level by 2100. Both illustrative scenarios achieve convergence in 2100 for comparability with the SSPs which end in 2100. The convergence scenarios demarcate a radical departure from the current state of the world (green bubble) which exhibits high inequality and even from previous scenarios because they achieve zero international inequality with varying degrees of growth (including very low overall growth as in the Costa Rica scenario).
+
+Second, Panel B in figure \ref{Figure 2: Economic logic of convergence scenarios}, shows hypothetical consumption expenditure convergence in the United States (USA) to the current average level of Denmark. This panel shows the trajectories of the ten income deciles in the USA. In the beginning there is large inequality (a top decile to bottom decile ratio of nearly 14), then over time the deciles grow or degrow their consumption expenditure at whatever rate necessary to reach the "goal" in 2100.
+
+Panel C in figure \ref{Figure 2: Economic logic of convergence scenarios} illustrates the national economic growth effects of an exemplary convergence scenario. In this case, the entire world converges to the current average level consumption of Costa Rica, but this time by 2060. This scenario exhibits an average global growth rate of roughly 1\% per year. This is despite reductions in average GDP per capita in current high-income countries. The majority of countries substantially grows in this scenario. Global South countries, specifically Sub-Saharan Africa, experience unprecedented growth rates of up to 8\%. Indeed, Panel C  figure \ref{Figure 2: Economic logic of convergence scenarios} demonstrates that for convergence to happen a complete inversion of global economic dynamics is required. Few countries stay on their current trajectories, albeit India is one of them and represents nearly a fifth of global population.
+
+\begin{figure}[hbt!]
+\centering
+ \includegraphics[width=15cm, height=11.5cm]{fig2.png}
+  \caption{Economic logic of convergence scenarios}
+  \label{Figure 2: Economic logic of convergence scenarios}
+  \medskip
+\small Panel A compares the average global GDP per capita and between country inequality in 2100 of two illustrative convergence scenarios to the Shared Socio-Economic Pathways (SSPs) and the current state of the world. Note that there are different GDP projections for the SSPs that vary by a lot depending on the forecaster. The OECD projection for SSP5 for instance is almost double than the IIASA projection for SSP5. Here the IIASA projection is used for GDP per capita. Gini coefficient values are taken from \parencite{benveniste2021tracing}. Panel B illustrates the model mechanics for the United States given convergence to Denmark consumption levels until 2100. Panel C provides an overview of required national economic growth rates for a convergence to Costa Rica level consumption until 2060.
+\end{figure}
+
+\FloatBarrier
+
+
+\subsection{The carbon costs of convergence - income level and time-horizon trade-offs}
+
+The characterizing parameters of the model are (i) the income level that the world reaches and (ii) the time horizon. In this and the following sections, I study systematic trade-offs between these two parameters with respect to how much global \(CO_2\) emissions occur in any given scenario. I term this the carbon costs of (income) convergence - the quantity emitted in the hypothetical worlds by the time of complete income convergence.  First, panel A of \ref{Figure 3: Carbon budget use until achieved convergence} displays how much the global income average grows under distinct parameter combinations. For example, a "Costa Rica until 2060" scenario would require on average still around 1\% of yearly growth. The highlighted contour lines (cyan) indicate historical global growth rates. The global economy in recent decades did not grow more than 4\%, nor did it ever shrink outside of crisis moments like the financial crisis or the 2020 pandemic. The horizontal zero growth line in Panel A (cyan) represents all scenarios in which the world economy on average does not grow, nor shrink - there is pure "redistribution" of income. Panel B of \ref{Figure 3: Carbon budget use until achieved convergence} displays the same parameter trade-off but with ensuing carbon emissions as an outcome variable. This panel B reads as follows: Emissions are measured relative to the 2-degree carbon budget with 67\% probability which is around 1020 tonnes (adjusted for start year and model scope based on the IPCC AR6 report \parencite{mukherji2023climate}). Thus a ratio of 1.0 means that exactly this carbon budget is used up to achieve full convergence. For example, the Costa Rica 2060 scenario achieves universal global convergence while using up this budget. This point of income convergence should not be confused with achieving net-zero emissions - the carbon costs of convergence in Panel B of figure \ref{Figure 3: Carbon budget use until achieved convergence} measure only how much emissions the world uses up until achieving convergence. There might still is a long way to zero emissions (which we explore below in section \ref{reaching-zero}. The blue region depicts all convergence scenarios that use up less or equal to the 2-degree budget by the time of completed convergence, the red shades region everything above. As indicated a Denmark 2100 scenario overshoots by around 60\% (red dot). Generally, scenarios that aim for lower average global income have an easier time to stay below the emission budgets (which is indicated by the triangle-like shape of the blue "feasible" region). The parameter \(z\), the long-term carbon intensity decline, is set to -5\% in Panel B and it is always so if not indicated otherwise. This choice is in accordance with the "best" that countries empirically attained between 2010 and 2020. Panel C and D illustrate a cross-section of the parameter space. Panel D displays a range of income/level scenarios ending in 2100. It shows how the income level alone influences the trajectories. In the short- to mid-term, so up to 2060 roughly, the income level matters greatly for emission outcomes. In the very long-term the trajectories differ less, due to reduced carbon intensities by a homogeneous rate \(z\). %Only at an income goal of 5000, which is below the current global average, emissions are reduced considerably faster than the 2-degree budget. But bear in mind that this is a highly unfeasible scenario with respect to other dimensions - such as quality of life, as the avergae income is too low and that it requires the assumption of technology path-dependency.
+Panel C illustrates the influence of parameter \(z\) in equation \ref{weighted_average}. This parameter determines which speed of decarbonization i.e. carbon intensity decline rate countries ultimately reach. If the maximum long-term decline is slow, like the exemplified -1\%, the income level that countries reach considerably influences the average carbon global intensity, because decarbonization success is dominated by the short-term positive relationship between economic growth and carbon intensity decline. If the maximum long-term speed is high, like the exemplified -10\%, income differences in scenarios matter less. This is except in the case when the income goal is only 5000 so an aggregate shrinkage of the global economy. This is because in this scenario, there are plenty of countries that reduce their average GDP per capita and at the same time adopt the -10\% carbon intensity reduction immediately because of the path-dependency assumption - that planned income reduction goes together with fast decarbonization. Importantly, even if the path-dependency assumption of technology and income per capita is not taken into account, the overall results remain robust (compare supplementary figure 2). 
+
+
+\begin{figure}[hbt!]
+\centering
+ \includegraphics[width=14cm, height=11cm]{fig3.png}
+  \caption{Convergence trajectories time and income level trade-offs}
+  \label{Figure 3: Carbon budget use until achieved convergence}
+  \medskip
+\small Panel A shows the growth rate of average household income as a function of the time horizon (x-axis) as well as the convergence income goal (y-axis). Panel B shows the global carbon costs of convergence, that is global \(CO_2\) emissions until the point of full income 
+convergence, as a ratio with the 2-degree carbon budget and as a function of the time horizon (x-axis) as well as the convergence income goal (y-axis). Panel C shows the trajectories of the carbon intensity across distinct income scenarios (the corresponding legend is part of Panel D). Panel D shows global emission trajectories until 2100 as a function of the income goal (IG).
+\end{figure}
+
+\FloatBarrier
+
+
+\subsection{Varying assumptions about growth and technology improvement}\label{Varying assumptions about growth and technology improvement}
+
+An important counterfactual scenario is one in which "the rich" (richer than the convergence goal) do not reduce their incomes, but keep their current levels or continue to increase their income at historic rates. Does this diminish the chance for keeping convergence scenarios within carbon budgets? Moreover, for comparison, I test the influence of distinct carbon intensity decline rates \(z\) on the feasibility of different convergence scenarios with respect to emission budgets.
+
+Panel A to C in figure \ref{Figure 4: Emissions as a function of rich groups' trajectories and technology} show the impact of different assumptions about the growth of "the rich" on the entire scenario space. Panel A is identical to Panel B in figure \ref{Figure 3: Carbon budget use until achieved convergence}. In Panel B figure \ref{Figure 4: Emissions as a function of rich groups' trajectories and technology} rich groups above the convergence income goal (vertical axis) enter a steady-state of income. We observe a shrinking "feasible" region (blue shade region), specifically for low income goals <\$10000. This is because, at lower income goals, there are many groups above, so if they do not reduce their income and therewith carbon emissions, it becomes increasingly difficult to keep within the carbon budget. At higher income goals, >\$20000, the steady state matters little in comparison. A similar but even more drastic observation is made in Panel C where high-income groups continue to grow their income at rates extrapolated from the 2012-2022 trend. The feasible region of convergence scenarios shrinks and the carbon budget overshoot even for medium-ambitious scenarios like the Costa Rica 2060 scenario is now almost 30\% which is 25\% percentage points higher than if rich groups reduce their incomes as in Panel A.
+
+Panel D to F probe distinct carbon intensity decline rates. Panel D depicts all scenarios under a maximum long-term carbon intensity decline rate of -2\% which is among the more pessimistc SSP assumptions. Here, again the income goal and time horizon matter to the emissions outcome. Under this low rate of carbon-intensity decline, the Denmark 2100 scenario uses more than twice the emissions of the Costa Rica 2060 scenario. The feasible region is small and largest for low income goals (blue shade). In Panel E, a medium-high carbon intensity decline is assumed (-6\%/yr) which is around the high-end of what is observed among countries in figure \ref{Figure 1: From historical income correlates and to future convergence paths} Panel A. Such a long-term carbon intensity decline rate enables substantially more convergence scenarios to remain within the carbon budget. The greatest impact this improved carbon intensity decline has is with respect to long-term high ambition scenarios like the Denmark income scenario for 2100. The amount of emissions this scenario uses up drops by 40\%. In Panel F, a very fast carbon intensity decline (-18\%/yr) is assumed in line with the most optimistic assumptions of SSP1. This is the only time the feasible region covers all possible scenarios (meaning the scenarios do not use up more emissions than the carbon budget until the point of convergence). This shows that technological progress remains an extremely critical parameter even if income reductions in high-income countries were a reality.
+
+\begin{figure}[hbt!]
+\centering
+ \includegraphics[width=15cm, height=8.88cm]{fig4.png}
+  \caption{Emissions as a function of rich groups' trajectories and technology}
+  \label{Figure 4: Emissions as a function of rich groups' trajectories and technology}
+  \medskip
+\small Panel A to C illustrate the emission outcomes across distinct scenarios and assumptions about whether high-income groups, groups that have larger initial income than the convergence goal, "reduce" their incomes (Panel A), keep it constant (Panel B) or continue to increase it at historic rates (Panel C). Panel D to F illustrate the impact on all scenarios in terms of emissions outcomes of distinct carbon intensity decline rates \(z\) specified in equation \ref{weighted_average}. The black circles represent a "pure redistribution" scenario, that is a scenario in which the world on aggregate and average does not experience economic growth but all countries and groups converge to the current average household income.
+\end{figure}
+
+\FloatBarrier
+
+\subsection{Reaching zero emissions}\label{reaching-zero}
+
+The previous section shows how much carbon is emitted until the point of complete income convergence. This section adds how far convergence trajectories are away from zero emissions in the end. Panel A to F in \ref{Figure 5: Emissions as a function of rich groups' trajectories} depict the corresponding scenario analytics to Panel A to F in \ref{Figure 4: Emissions as a function of rich groups' trajectories and technology}. Therefore, the "optimum" scenario stays within the carbon budget until convergence is achieved (white dashed line) and at the same time reaches 0\% of yearly emissions with respect to 2022. Panel A demonstrates that even with full convergence, so including income reductions for high income groups, no convergence scenario under "medium" technology assumptions reaches zero emissions. For example, the Costa Rica 2060 scenario still is at almost 80\% of yearly emissions with respect to 2022 when convergence is achieved. And these scenarios include rather optimistic carbon-intensity reduction rates of -5\% across countries in the long-term. The best-case is achieved by low-income scenarios that have a long time horizon (until 2100). The faster the time horizon in which convergence is supposed to be achieved and the higher the income goal, the further away from zero emissions do convergence trajectories come. This is expected as faster convergence and high income goals imply larger near-term economic growth and less time for decarbonization. The white dashed line across all panels indicates the region of scenarios that remain below the 2-degree budget based on section \ref{Varying assumptions about growth and technology improvement}. Panel B and C show that fewer convergence scenarios come close to zero emissions if high-income groups enter a steady-state of income or continue to grow. %Panel C also illustrates the interesting fact that if one aims for very low convergence goals, so the income that everyone reaches at least, but then the currently high-income groups continue to grow may is worse outcome than if one aims for higher incomes in the long-term. This is because if the aim is low for low-income countries, it means they do not experience much economic growth and with our standard assumptions that means they get stuck in high-carbon technology.
+
+Panel D to F show the effect of distinct technology assumptions as per the rate \(z\) in equation \ref{weighted_average} on all scenarios and their final emissions per year. In Panel D with low carbon intensity decline per year, no scenario reaches zero emissions. The best performing ones are very low-income ones. In Panel E it becomes apparent that with faster decarbonization several scenario combinations get to almost zero emission. The orange line demarcates the set of scenarios that gets to below 20\% of emissions left with respect to 2022 levels. The white dashed line still demarcates the set of scenarios that stay within the carbon budget until the point of convergence is reached. Only a small set of scenarios, below the intersection of orange and white dashed line, satisfies both conditions. This set of scenarios however can be drastically enlarged with even faster carbon intensity decline rates as Panel F demonstrates. Under this optimistic yearly carbon intensity decline \(z = -18\%/yr\) all scenarios that end in 2100 reach zero emissions (asymptotically) with respect to 2022 emissions. Still a larger set of scenarios reaches less than 20\% of emissions with respect to 2022 emissions. For example, the Costa Rica 2060 scenario under these conditions uses only 62\% of the two degree carbon budget (refer to Panel F \ref{Figure 4: Emissions as a function of rich groups' trajectories and technology}) and also at the same time ends up with only 18\% of the 2022 emissions left. Thus, with extremely optimistic carbon-intensity decline, comparable to SSP1, universal income convergence is achievable this century.
+
+\begin{figure}[hbt!]
+\centering
+ \includegraphics[width=15cm, height=8.88cm]{fig5.png}
+  \caption{Closeness of scenarios to zero emissions}
+  \label{Figure 5: Emissions as a function of rich groups' trajectories}
+  \medskip
+\small Panel A to C illustrate the emission outcomes with respect to 2022 levels across distinct scenarios and assumptions about whether high-income groups, groups that have larger initial income than the convergence goal, "reduce" their incomes (Panel A), keep it constant (Panel B) or continue to increase it at historic rates (Panel C). Panel D to F illustrate the impact  of distinct carbon intensity rates \(z\) specified in equation \ref{weighted_average} on all scenarios in terms of emissions outcomes with respect to 2022 levels. Therefore if, as in Panel A, the 2060 Costa Rica scenario reaches 77\%, then this refers to the fact that there are still 77\% of yearly emissions left with respect to 2022.
+\end{figure}
+
+\FloatBarrier
+
+
+\section{Discussion}
+
+Previous studies that focus on climate impacts of eradicating extreme poverty deliver important insights for the short-term \parencite{wollburg2023ending}, but assessing long-term dynamics of converging affluence in a climate-constrained world is a distinct issue that I addressed here.
+
+The results of this modelling exercise illustrate that, if no extreme decarbonization rates are assumed, achieving universal high income is nearly impossible considering internationally agreed climate targets. Even if the entire world reduces their carbon intensity by -6\% per year, which already is in the optimistic empirical range, reaching \$20,000 disposable household income per person, comparable to Denmark's current income level, overshoots the 2‐degree budget. And this result holds despite the fact that groups above this income would downscale. Empirically the world average carbon intensity has reduced only by -1.5\% from 2000 to 2022. The distribution over countries and regions ranges from -6.5\% at best to +5\% at worst (with a strong central tendency around -1-2\%). This should clarify how difficult universal income convergence and therefore also large economic growth in a climate-constrained world is. If the rate \(z\) in equation \ref{weighted_average} is assumed to be only -2\%, a convergence to the income level of Denmark proves disastrous with respect to the 2-degree budget (with 67\% probability) with an overshoot of more than double the budget and still being very far from zero emissions at the end of the century. With this more pessimistic technology assumption, pure redistribution scenarios, in which the world on aggregate does not grow, or shrinkage scenarios, in which the aggregate income of the world reduces, deliver the best emission outcomes (I will comment on the problems with such scenarios further down). And even these kind of scenarios still do not fully decarbonize under pessimist technology. Thus, my results may seem somewhat in contrast to previous research that suggests that international and national income convergence does not create any climate-affluence trade-offs \parencite{rao2018less, chakravarty2009sharing} - but it has to be clearly distinguished between studies that isolate the effect of the level of inequality on yearly emissions on the one hand as in \textcite{rao2018less, chakravarty2009sharing} and on the other hand entire dynamic pathways and their cumulative emissions. Equality is not a threat to climate, but the current and hypothetical future size of the global economy is given plausible carbon intensities. One of the biggest lessons from the modelling exercise is that the reductions of current high incomes makes a difference, if technology improvement is not assumed to be very fast. We can see this in all Panels in figure \ref{Figure 4: Emissions as a function of rich groups' trajectories and technology} and figure \ref{Figure 5: Emissions as a function of rich groups' trajectories}. The lower the income goal, the larger the set of feasible scenarios with respect to climate goals. However, there is at least one major caveat to low-income scenarios: low-income scenarios, such as pure redistribution scenarios, are not desirable from a normative point of view given the world's pervasive poverty and low quality of life outcomes. Pure redistribution in a world of zero economic growth would mean for everyone to live at the current average household disposable income at around \$PPP 7000 per person a year ($\approx$\$PPP 20 a day normed on purchasing power in the USA). This seems implausible for attaining a "good life" - even if socio-economic provisioning systems changed radically \parencite{fanning2020provisioning}. Moreover, it is important to note that while a reduction of affluence among "the rich" does make a notable difference when "slow" technology roll-out is assumed, it is not entirely world-saving and cannot bring emissions to zero.
+%This is at least not with respect to climate change mitgation and emission reductions (There might be other systemic implications of degrowth that solve different problems of the world economic system such as unequal exchange injustice \parencite{ricci2019unequal}).
+It has been argued many times that income reductions of high-income groups are extremely critical to climate change mitigation but this is questionable with respect to convergence scenarios in which a "European income floor" is the goal for all. According to my model, income reductions among the rich (mostly in the Global North) can be a considerable mediating factor, but alone cannot mitigate a sufficient quantity of emissions. And this, of course, makes the very optimistic political-economy assumption that income reductions among the rich can be politically implemented next to vast economic growth in the Global South. While there is some progress towards international taxation agreements on income and wealth \parencite{oecd_tax_reforms_2023}, the 2024 European parliament election make it seem implausible, because even in "wealthy and progressive Europe", a general leap to the far-right indicates policy opposed to redistribution. Therewith, my results perhaps fill the space between the polarized positions for and against income reductions as a lever for climate change mitigation \parencite{jackson2024confronting, warlenius2023limits}. 
+
+From a policy point of view this then implies two things: (i) Global North countries, and to some degree countries in general, should curtail the consumption of the upper income decile as much they can. Global South countries can focus for instance on the top 1\% of income earners or even the upper 0.1\% and 0.01\%. This policy target has been suggested for India for example \parencite{bharti2024income}. Policies could also introduce consumption-taxation purpose focusing on the "luxury" consumption of the rich \parencite{oswald2023luxury} or focus on measures such progressive wealth taxation \parencite{saez2019progressive} that ultimately will also reshape income and consumption (ii) All countries in the world should pursue decarbonization as fast as possible - this remains by far the biggest lever to avert further catastrophe. Fossil fuel extraction and consumption must be stopped immediately. While increasingly adopted \parencite{worldbank2024state}, carbon pricing needs to be universally implemented and with high and rapidly increasing prices. Global North countries should help the Global South wherever possible with loss-and-damage compensation funds as well as investments into infrastructure necessary for stimulating economic growth in the Global South. Climate policy, for example carbon taxation and its revenues, can be combined with international redistribution to foster such programs \parencite{aleksandrova2024unlocking, feng2023global}.
+
+%Now, some degrowth proponents argue that the entire concept of purchasing power parity and income as a living standard metric is misleading and that it only matters what exact goods and services people can access. This latter part is of course true and exact thresholds like the extreme poverty threshold are definitely problematic for giving an accurate picture of improvement in welfare. But it is less questionable that the order of magnitude of income still matters - a life at \$20 a day is undoubtedly much better than at\$2 a day by just looking how welfare outcomes around the world correlate with income. Another line of degrowth argument is that indeed the world could live at no aggregate growth especially when it comes to resource metrics (energy, materials etc.). And that ultimately only these metrics matter (CITE). However, if economic metrics like income are indeed ultimately meaningless in terms of resource consumption, the entire concept of degrowth as a critique to economic growth would not make much sense either. Because if there is zero resource costs to economic growth, or zero ability for determining this resource cost, then there is no clear reason it should be halted either. And indeed it is the degrowth school who emphasizes that globally aggregate GDP continues to be tightly coupled to emissions and to the material footprint (CITE). Hence, the model specifically contributes to systematically finding the optimum between welfare improvement and environmental destruction - even if many questions are still open.
+
+From a methodological point of view, there are various limitations that could be addressed in following work. First, I have made no distinction between countries in terms of their sectoral structure. Eventually, countries' carbon intensities converge. But will an agricultural state attain the same level of decarbonization as an industrial one by the end of the century? There is also the question of how far apart countries can be in terms of sectoral structure given that they all achieve the same income level. More sophisticated convergence scenarios should address sectoral structure and perhaps economic complexity (a metric analysing such structure in detail) \parencite{hidalgo2021economic}. One more issue is that there is no clear existing relationship between current carbon emissions levels and economic structure or between carbon intensity and economic structure (while service sectors are often of low carbon intensity there is no such generic relationship on a cross-country national level). %There is also no systematic relationship between carbon intensity level and income level. I have employed an assumption about the relationship between carbon intensity change rate and income level which is different.
+Second, and relatedly, this modelling exercise is, while being dynamic, still a simple income-based redistribution calculus. There is no representation of trade and industries at all which is of course a major abstraction from reality. In reality, economic convergence to a radical extent implies not only a geopolitical turnaround but also a major transformation of how trade-flows evolve. Third, national energy needs and decarbonization depend on geographic conditions and climate outcomes. For example countries vary depending on their heating or cooling needs due to their climatic conditions. Climate change is set to change those drastically. So future research, perhaps employing suited Integrated Assessment Models, could explore energy supply change under given convergence trajectories as well as a temperature feedback on income, energy needs and emission outcomes \parencite{kikstra2021social} - the latter which might be one of the biggest caveats of the current model. Clearly also stochastic versions of the model could be developed in a next step in order to get a better grasp on uncertainties surrounding convergence scenarios.
+
+In any case, while not fully conclusive with respect to a normative prescription and not comprehensive with respect to all relevant techno-economic and socio-economic issues, this study has elucidated some general principles and parameter trade-offs that all economic convergence scenarios eventually have to confront. The large economic inequality between countries and population groups is a great injustice, and so is climate change - solving both remains paramount.
+
+
+
+\section{Code and data availability}
+
+All code related to the model and all corresponding outputs are publically available at anonymized.
+
+\section{Funding information}
+
+anonymized 
+
+\section{Acknowledgments}
+
+anonymized
+
+\section{Author contributions}
+
+anonymized
+
+\printbibliography
+
+\end{document}
