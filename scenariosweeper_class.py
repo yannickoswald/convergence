@@ -28,7 +28,10 @@ class ScenarioSweeper:
                        steady_state_high_income_assumption_values,
                        sigmoid_parameters_values,
                        final_improvement_rate,
-                       population_hysteresis_assumption_values):
+                       population_hysteresis_assumption_values,
+                       run_until_2100,
+                       cdr_assumption,
+                       cdr_level_2100):
 
         """
         Description: 
@@ -51,6 +54,11 @@ class ScenarioSweeper:
 
         self.sigmoid_parameters_values = sigmoid_parameters_values
         self.final_improvement_rate = final_improvement_rate
+
+
+        self.run_until_2100 = run_until_2100 # Assume different run until 2100 assumptions
+        self.cdr_assumption = cdr_assumption # Assume different CDR assumptions
+        self.cdr_level_2100 = cdr_level_2100 # Assume different CDR levels in 2100 assumptions
         
         # store emissions for each scenario in a dictionary where the key is the scenario specified via the params and the value is the total emissions
         self.total_emissions = {}
@@ -82,8 +90,10 @@ class ScenarioSweeper:
         steady_state_high_income_assumption = self.steady_state_high_income_assumption_values[0]  # this will be just one value in this iteration but for consistency and generality we loop over all the given values  
         population_hysteresis_assumption = self.population_hysteresis_assumption_values[0]
 
-
-
+        run_until_2100 = self.run_until_2100  # this will be just one value in this iteration but for consistency and generality we loop over all the given values
+        cdr_assumption = self.cdr_assumption  # this will be just one value in this iteration but for consistency and generality we loop over all the given values
+        cdr_level_2100 = self.cdr_level_2100  # this will be just one value in this iteration but for consistency and generality we loop over all the given values
+        #print("this is run until 2100", run_until_2100)
         sigmoid_parameters = self.sigmoid_parameters_values  # this will be just one value in this iteration but for consistency and generality we loop over all the given values
         final_improvement_rate = self.final_improvement_rate  # this will be just one value in this iteration but for consistency and generality we loop over all the given values
         
@@ -93,53 +103,53 @@ class ScenarioSweeper:
         for carbon_budget in self.carbon_budget_values: # this will be perhaps many values
             for end_year in self.end_year_values: # this will be perhaps many values
                 for income_goal in self.income_goal_values: # this will perhaps be many values
-                    # Create a new scenario with the current parameter values
-                    scenario_params = {
-                        "end_year": end_year,
-                        "income_goal": income_goal,
-                        "carbon_budget": carbon_budget,
-                        "gdp_assumption": gdp_assumption,
-                        "pop_growth_assumption": pop_growth_assumption,
-                        "tech_evolution_assumption": tech_evolution_assumption,
-                        "tech_hysteresis_assumption": tech_hysteresis_assumption,
-                        "steady_state_high_income_assumption": steady_state_high_income_assumption,
-                        "k": sigmoid_parameters[0],
-                        "t0": sigmoid_parameters[1],
-                        "final_improvement_rate": final_improvement_rate,
-                        "population_hysteresis_assumption": population_hysteresis_assumption
-                    }
+                    for cdr_level in self.cdr_level_2100: # this will be perhaps many values or just one value
+                        for carbon_intensity_rate in self.final_improvement_rate: # this will be perhaps many values or just one value
+                            # Create a new scenario with the current parameter values
+                            scenario_params = {
+                                "end_year": end_year,
+                                "income_goal": income_goal,
+                                "carbon_budget": carbon_budget,
+                                "gdp_assumption": gdp_assumption,
+                                "pop_growth_assumption": pop_growth_assumption,
+                                "tech_evolution_assumption": tech_evolution_assumption,
+                                "tech_hysteresis_assumption": tech_hysteresis_assumption,
+                                "steady_state_high_income_assumption": steady_state_high_income_assumption,
+                                "k": sigmoid_parameters[0],
+                                "t0": sigmoid_parameters[1],
+                                "final_improvement_rate": carbon_intensity_rate,
+                                "population_hysteresis_assumption": population_hysteresis_assumption,
+                                "run_until_2100": run_until_2100[0], #because this comes as list
+                                "cdr_assumption": cdr_assumption[0],#because this comes as list 
+                                "cdr_level_2100": cdr_level 
+                            }
                     
-                    scenario = self.create_scenario(scenario_params)
-                    scenario.compute_country_scenario_params()
+                            scenario = self.create_scenario(scenario_params)
+                            scenario.compute_country_scenario_params()
 
-                    # Convert scenario_params dictionary to a tuple of tuples (key, value pairs)
-                    scenario_key = tuple(sorted(scenario_params.items()))
+                            # Convert scenario_params dictionary to a tuple of tuples (key, value pairs)
+                            scenario_key = tuple(sorted(scenario_params.items()))
+                            #print("this is the scenario key", scenario_key)
 
-                    # Calculate the global average necessary growth rate for the current scenario at the beginning so before the scenario runs
-                    global_growth_rate = scenario.compute_average_global_growth_rate()
-                    self.growth_rate_global[scenario_key] = global_growth_rate
-                    
-                    # Run the scenario
-                    scenario.run()
+                            # Calculate the global average necessary growth rate for the current scenario at the beginning so before the scenario runs
+                            global_growth_rate = scenario.compute_average_global_growth_rate()
+                            #print("this is the global growth rate", self.growth_rate_global)
+                            self.growth_rate_global[scenario_key] = global_growth_rate
+                            
+                            # Run the scenario
+                            scenario.run()
 
-                    # Calculate total emissions for the current scenario
-                    total_emission = scenario.sum_cumulative_emissions()
-                    total_emissions_gigatonnes = total_emission / 1e9  # convert to gigatonnes
-                
-                    # Store the total emissions in the list
-                    self.total_emissions[scenario_key] = total_emissions_gigatonnes / carbon_budget # store the ratio of total emissions to the carbon budget for each scenario
-
-                    # Calculate the gini coefficient change rate for the current scenario (VERY COMPUTATIONALLY EXPENSIVE)
-                    #self.gini_coefficient_change_rate_global[scenario_key] = scenario.compute_gini_coefficient_change_rate()
-
-                    self.final_emissions[scenario_key] = scenario.compute_ending_global_emissions()
-
-
-                    self.gini_coefficient_national[scenario_key] = scenario.store_national_gini_coefficients()
-
-                    self.national_gdp_trajectories[scenario_key] = scenario.store_national_gdp_trajectories()
-
-
+                            # Calculate total emissions for the current scenario
+                            total_emission = scenario.sum_cumulative_emissions()
+                            total_emissions_gigatonnes = total_emission / 1e9  # convert to gigatonnes from tonnes? check whether correct
+                        
+                            # Store the total emissions in the list
+                            self.total_emissions[scenario_key] = total_emissions_gigatonnes / carbon_budget # store the ratio of total emissions to the carbon budget for each scenario
+                            # Calculate the gini coefficient change rate for the current scenario (VERY COMPUTATIONALLY EXPENSIVE)
+                            #self.gini_coefficient_change_rate_global[scenario_key] = scenario.compute_gini_coefficient_change_rate()
+                            self.final_emissions[scenario_key] = scenario.compute_ending_global_emissions()
+                            self.gini_coefficient_national[scenario_key] = scenario.store_national_gini_coefficients()
+                            self.national_gdp_trajectories[scenario_key] = scenario.store_national_gdp_trajectories()
 
         return self.total_emissions, self.growth_rate_global, self.gini_coefficient_change_rate_global, self.final_emissions, self.gini_coefficient_national, self.national_gdp_trajectories # self.national_gdp_ppp_pc, self.hh_consumption_pc, self.population
     
@@ -148,8 +158,6 @@ class ScenarioSweeper:
         # and has methods compute_country_scenario_params() and run()
         return Scenario(params)
     
-
-   
 
     def plot_total_emissions_trade_off(self, dependent_var, variables_considered, fixed_color_scale, annotations_plot, colorscaleon, ax=None):
         """
@@ -178,7 +186,7 @@ class ScenarioSweeper:
         x_values_set = set()
         y_values_set = set()
 
-        name_mapping = {"end_year": "End Year",
+        name_mapping = {"end_year": "Convergence Year",
                         "income_goal": "Income Goal $PPPpc", 
                         "carbon_budget": "Carbon Budget", 
                         "gdp_assumption": "GDP Assumption"}
@@ -220,24 +228,41 @@ class ScenarioSweeper:
             # Determine the proportion of the threshold within the data range
             min_val, max_val = np.min(data), np.max(data)
 
-            if max_val <= threshold:
+            #if max_val <= threshold:
+             #   return cmap_below
+            #elif threshold > max_val:
+             #   return cmap_above
+            
+            # If all data is below or equal to threshold, use below cmap
+            if threshold >= max_val:
                 return cmap_below
+            # If all data is above or equal to threshold, use above cmap
+            if threshold <= min_val:
+                return cmap_above
 
-            threshold_norm = (threshold - min_val) / (max_val - min_val)
+            #threshold_norm = (threshold - min_val) / (max_val - min_val)
             #print("this is the threshold_norm", threshold_norm)
 
             # Generate colors for each part
-            below_colors = cmap_below(np.linspace(0, 1, int(256 * threshold_norm)))
-            above_colors = cmap_above(np.linspace(0, 1, 256 - int(256 * threshold_norm)))
+            #below_colors = cmap_below(np.linspace(0, 1, int(256 * threshold_norm)))
+            #above_colors = cmap_above(np.linspace(0, 1, 256 - int(256 * threshold_norm)))
             #print("this is the below_colors", below_colors)
             #print("this is the above_colors", above_colors)
             
             # Combine colors at the threshold
-            all_colors = np.vstack((below_colors, above_colors))
-            combined_cmap = mcolors.LinearSegmentedColormap.from_list('combined_cmap', all_colors)
+            #all_colors = np.vstack((below_colors, above_colors))
+            #combined_cmap = mcolors.LinearSegmentedColormap.from_list('combined_cmap', all_colors)
             
-            return combined_cmap
-        
+            # return combined_cmap
+
+             # Otherwise build a combined colormap
+            norm_thr = (threshold - min_val) / (max_val - min_val)
+            norm_thr = np.clip(norm_thr, 0.0, 1.0)
+            below_colors = cmap_below(np.linspace(0, 1, int(256 * norm_thr)))
+            above_colors = cmap_above(np.linspace(0, 1, 256 - int(256 * norm_thr)))
+            all_colors = np.vstack((below_colors, above_colors))
+            return mcolors.LinearSegmentedColormap.from_list('combined_cmap', all_colors)
+            
         # Create linear segmented colormaps for values below and above the threshold
         cmap_below = mcolors.LinearSegmentedColormap.from_list("below", colors_below)
         cmap_above = mcolors.LinearSegmentedColormap.from_list("above", colors_above)
@@ -274,7 +299,7 @@ class ScenarioSweeper:
             # Set the colorbar's tick labels to predefined values
             #colorbar.set_ticks([0.5, 1, 1.5, 2])  # Predefined tick values ## needs to be activated for figure 3 and deactivated for figure 4
         ax.set_xlabel(name_mapping[variables_considered[0]])
-        ax.set_ylabel(name_mapping[variables_considered[0]])
+        ax.set_ylabel(name_mapping[variables_considered[1]])
         ax.set_xticks(x_values)
         ax.set_xticklabels([str(x) for x in x_values], rotation=45)
         ax.set_yticks(y_values)
@@ -360,7 +385,7 @@ class ScenarioSweeper:
         # annotate costa rica scenario dot and pure redistr. scenario dot with values
         #COSTA RICA SCENARIO
         ax.scatter(2060, 10000, s=100, c='blue', marker='o', zorder = 5, label='Costa Rica')
-        ax.annotate("2060\nCosta Rica\nscenario", (2060, 10000), textcoords="offset points", xytext=(68,33), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
+        ax.annotate("2060\nCosta Rica\nscenario", (2060, 10000), textcoords="offset points", xytext=(30,30), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
 
         #PURE REDISTR. SCENARIO
         #ax.scatter(2060, 7000, s=100, c='black', marker='o', zorder = 5, label='Redistr. 2060')
@@ -377,7 +402,7 @@ class ScenarioSweeper:
 
             # Step 3: Annotate this Z value on the plot
             #ax.scatter(x_values[x_pos], y_values[y_pos], color='red', s=100, zorder=5)  # Mark the point
-            ax.annotate(f"Overshoot {z_value:.2f}", (x_values[x_pos], y_values[y_pos]), textcoords="offset points", xytext=(50, -5), ha='center', fontsize=8, arrowprops=dict(arrowstyle="-", color='black'))
+            ax.annotate(f"Overshoot {z_value:.2f}", (x_values[x_pos], y_values[y_pos]), textcoords="offset points", xytext=(-30, 10), ha='center', fontsize=8)
         except ValueError as e:
             print("Specified point (2060, 10000) not found in the dataset.")
 
@@ -424,7 +449,7 @@ class ScenarioSweeper:
             x_values_set = set()
             y_values_set = set()
 
-            name_mapping = {"end_year": "End Year",
+            name_mapping = {"end_year": "Convergence Year",
                             "income_goal": "Income Goal $PPPpc", 
                             "carbon_budget": "Carbon Budget", 
                             "gdp_assumption": "GDP Assumption"}
@@ -540,6 +565,57 @@ class ScenarioSweeper:
             if ax is None:
                 # Return figure and axes for external use
                 return fig, ax
+            
+    def plot_overshoot_tradeoff(self, dependent_var, variables_considered, ax=None):
+        """
+        Description:
+            Plot the overshoot factor (ratio of cumulative emissions to budget) against the convergence income goal,
+            with one line per convergence year (end_year).
+
+        Parameters:
+            dependent_var         - dict mapping scenario-parameter tuples to overshoot factor
+            variables_considered  - list ["end_year", "income_goal"]
+            ax                     - optional matplotlib Axes to plot on (default creates new)
+        """
+        # Ensure correct variables
+        if variables_considered != ["end_year", "income_goal"]:
+            raise ValueError("variables_considered must be ['end_year', 'income_goal'] for this plot")
+
+        # Extract unique years and income goals
+        data = {}
+        years = set()
+        goals = set()
+        for key, val in dependent_var.items():
+            params = dict(key)
+            year = params['end_year']
+            goal = params['income_goal']
+            years.add(year)
+            goals.add(goal)
+            data.setdefault(year, {})[goal] = val
+        years = sorted(years)
+        goals = sorted(goals)
+
+        # Prepare axes
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(8, 5))
+        else:
+            fig = ax.get_figure()
+
+        # Plot one line per year
+        for year in years:
+            y_vals = [data[year].get(g, np.nan) for g in goals]
+            ax.plot(goals, y_vals, marker='o', linestyle='-', label=str(year))
+
+        # Labeling
+        ax.set_xlabel('Convergence Income Goal (PPP per capita)')
+        ax.set_ylabel('Overshoot (Emissions/Budget)', fontweight='bold')
+        ax.set_title('Overshoot vs Income Goal')
+        ax.set_xticks(goals)
+        ax.set_xticklabels([str(g) for g in goals], rotation=45)
+        #ax.legend(title='End Year')
+        ax.grid(True, linestyle='--', alpha=0.5)
+
+        return fig, ax
             
 
     def plot_gini_coefficient_change_trade_off(self, dependent_var, variables_considered, ax=None):

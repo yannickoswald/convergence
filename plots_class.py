@@ -50,6 +50,7 @@ class Plots():
 
         ax[0].plot(list(country.income_hh_trajectory.keys()), list(country.income_hh_trajectory.values()), color = "tab:orange")
         ax[0].plot(list(country.gdppc_trajectory.keys()), list(country.gdppc_trajectory.values()), color = "tab:blue")
+
         # axes labels
         ax[0].set_xlabel('Year')
         ax[0].set_ylabel('$ (PPP)')
@@ -70,6 +71,7 @@ class Plots():
         # legend as loop over deciles but outside the plot and also the order should be reversed
         ax[1].legend([f'Decile {decile_num}' for decile_num in range(1, 11)], bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
 
+    
         # no margins
         ax[1].margins(0)
          # set ylims lower bound to 0 but no upper bound
@@ -281,18 +283,34 @@ class Plots():
 
         # Sort the global emissions trajectory by year
         sorted_years = sorted(global_emissions_trajectory.keys())
-        sorted_emissions_trajectory = [global_emissions_trajectory[year]/1000 for year in sorted_years] # convert to metric tons from kg
+        
+        #print("this is the emissions trajectory", sorted_emissions_trajectory)
+ 
+        # if self.scenario.cdr_assumption_on is True, then plot the cdr global level trajectory and add these values to the emission trajectory
+        if self.scenario.cdr_assumption == "on":
+            # Iterate over the years in the global emissions trajectory
+            for year in sorted_years:
+                # If the year is in the CDR global level trajectory, subtract the CDR value from the emissions trajectory
+                if year in self.scenario.cdr_global_level_trajectory:
+                    global_emissions_trajectory[year] -= self.scenario.cdr_global_level_trajectory[year]*1e12 # convert from gigatonnes to kgs
+                    print("this after calculation emissions", global_emissions_trajectory[year])
+                    print("this the cdr global level trajectory multiplied", self.scenario.cdr_global_level_trajectory[year]*1e9)
 
+        sorted_emissions_trajectory = [global_emissions_trajectory[year]/1000 for year in sorted_years] # convert to metric tons from kg
         # Plot the global emissions trajectory
         ax.plot(sorted_years, sorted_emissions_trajectory, color = color, label = label)
         ax.set_xlabel('Year')
-        ax.set_ylabel('Emissions (metric tons)')
+        ax.set_ylabel('Emissions (metric tonnes)')
         ax.margins(0)
-        ax.set_ylim(bottom=0)
+        #ax.set_ylim(bottom=0)
+        # draw a horizontal line at 0 emissions on the x axis
+        ax.axhline(0, color='black', lw=1, alpha=0.5)
 
         # plot linear carbon budget pathway
         years_lin, emissions_lin = self.scenario.compute_linear_carbon_budget_pathway()
         ax.plot(years_lin+2022, emissions_lin*1e9, color="tab:orange", label="Linear Budget") # convert from years to 2022 plus the years required and from gigatonnes to metric tonnes
+        
+   
         # plot exponential carbon budget pathway
         #years_exp, emissions_exp = self.scenario.compute_exponential_carbon_budget_pathway()
         #ax.plot(years_exp+2022, emissions_exp*1e9, color = "tab:red")
@@ -593,9 +611,44 @@ class Plots():
 
         #print(type(sorted_carbon_intensity_trajectory))  # Debug line to check type
         return sorted_carbon_intensity_trajectory
+    
+    def plot_cdr_global_level_trajectory(self, ax=None, color=None, label=None):
+        """
+        Description:
+            Plots the global carbon dioxide removal (CDR) trajectory as defined
+            in the scenario attribute. This trajectory represents the global
+            scenario rather than the sum over individual country trajectories.
+        
+        Parameters:
+            ax (matplotlib.axes.Axes, optional): The axis on which to plot.
+                If None, a new figure and axis are created.
+            color (str, optional): The color for the plot line.
+            label (str, optional): The label for the plot (for use in legends).
+        
+        Returns:
+            matplotlib.axes.Axes: The axis containing the plot.
+        """
+        # Create a new axis if one wasn't provided.
+        if ax is None:
+            fig, ax = plt.subplots()
 
+        # Assuming self.scenario.cdr_global_level_trajectory is a dictionary with years as keys
+        # and CDR values as values.
+        # Example: {2020: 0, 2021: 0.1, ..., 2100: 10}
+        years = sorted(self.scenario.cdr_global_level_trajectory.keys())
+        cdr_values = [self.scenario.cdr_global_level_trajectory[year] for year in years]
 
+        # Plot the trajectory.
+        ax.plot(years, cdr_values, color=color, label=label)
+        ax.set_xlabel("Year")
+        ax.set_ylabel("Global CDR Level")
+        ax.set_title("Global Carbon Dioxide Removal Trajectory (Scenario)")
 
+        # Optionally add a legend if a label was provided.
+        if label is not None:
+            ax.legend()
+
+        return ax
 
 
 

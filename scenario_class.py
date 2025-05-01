@@ -22,6 +22,10 @@ class Scenario():
         (2) Country-data
             data             - real-world data of all countries
             specifies many country-level parameters
+
+
+            run_until_2100             - flag indicating if simulation should continue until 2100 regardless of convergence
+
     """
 
     def __init__(self, scenario_params):
@@ -40,6 +44,7 @@ class Scenario():
         self.k = scenario_params["k"]
         self.t0 = scenario_params["t0"]
         self.final_improvement_rate = scenario_params["final_improvement_rate"]
+
     
         # Load the country data
         self.raw_data = self.load_country_data()
@@ -55,12 +60,21 @@ class Scenario():
         self.tech_hysteresis_assumption = self.validate_assumption(scenario_params, "tech_hysteresis_assumption", ["on", "off"])
         self.steady_state_high_income_assumption = self.validate_assumption(scenario_params, "steady_state_high_income_assumption", ["on", "off", "on_with_growth"])
         self.population_hysteresis_assumption = self.validate_assumption(scenario_params, "population_hysteresis_assumption", ["on", "off"])
-        
+        self.cdr_assumption = self.validate_assumption(scenario_params, "cdr_assumption", ["on", "off"])
+
         # Initialize global outcomes storage
         self.gini_data = {"years": [], "population": [], "income": []}
 
         # initialize the national gini coefficients holding place
         self.national_gini_coefficients = None
+
+        # New parameters for CDR and extended simulation
+        self.run_until_2100 = scenario_params.get("run_until_2100", False) # on or off
+        self.cdr_assumption = scenario_params.get("cdr_assumption", False) # on or off
+        #print("this is the cdr assumption in scenario class", self.cdr_assumption)
+        self.cdr_level_2100 = scenario_params.get("cdr_level_2100", 0) # in gigatons
+        self.cdr_global_level_trajectory = self.compute_global_cdr_trajectory() if self.cdr_assumption == "on" else None # this is the global cdr trajectory
+
 
     @staticmethod 
     def validate_assumption(params, key, valid_values):
@@ -363,6 +377,17 @@ class Scenario():
         for country in self.countries.values():
                 # sum the emissions trajectory for each country and add to cumulative emissions
                 cumulative_emissions += sum(country.emissions_trajectory.values())
+
+        # 
+        print("this is the cumulative emissions  before cdr adjustment", cumulative_emissions)
+        
+
+        # if cdr is on, subtract the cdr trajectory from the cumulative emissions
+        if self.cdr_assumption == "on":
+                for year, cdr_value in self.cdr_global_level_trajectory.items():
+                        cumulative_emissions -= cdr_value * 1e9 # convert to kgs from gigatons
+
+        print("this is the cumulative emissions  after cdr adjustment", cumulative_emissions)
         return cumulative_emissions
     
     
@@ -507,9 +532,20 @@ class Scenario():
                 None
         """
         
+
+
         # loop over all countries for country specific steps
         for country in self.countries.values():
                 country.technological_change()
+                # Differentiate between scenarios that run regardless of end year to 2100 and those that stop at the end year
+                # if self.run_until_2100 == "on":
+                        # check if the year is less than 2100
+                       #  if country.year < self.end_year:
+                                # run the scenario until 2100
+                               #  country.economic_growth()
+                #  else:
+                        # country.economic_growth()
+
                 country.economic_growth()
                 country.population_growth()
                 country.update_emissions()
@@ -562,6 +598,115 @@ class Scenario():
                                 scenario_gdp_data = add_list_to_dataframe(scenario_gdp_data, countryvalues2)
 
                 return scenario_gdp_data
+    
+    #def compute_global_cdr_trajectory(self):
+        #"""
+        #Compute the global carbon dioxide removal (CDR) trajectory using a convex exponential model.
+        
+        #The trajectory is given by:
+         #   CDR(t) = cdr_level_2100 * [exp(k * (t - start_year)) - 1] / [exp(k * (2100 - start_year)) - 1]
+        
+        #where:
+         #   - t is any year between start_year and 2100.
+         #   - k is a growth rate constant (set here arbitrarily to 0.03 for example purposes).
+        
+        #Returns:
+         #   dict: A dictionary with years as keys (int) and the corresponding CDR values as floats.
+        #"""
+        # Growth rate constant; adjust as needed for a sharper or milder exponential look.
+        #k = 0.03
+        
+        #final_year = 2100
+        
+        # Create an array of years from start_year to 2100.
+        #years = np.arange(self.start_year, final_year + 1)
+        
+        # Compute the convex exponential CDR trajectory.
+        #cdr = self.cdr_level_2100 * (np.exp(k * (years - self.start_year)) - 1) / (np.exp(k * (final_year - self.start_year)) - 1)
+        
+        # Build a dictionary where the key is the year (as an integer) and the value is the CDR (as a float)
+        #trajectory = {int(year): float(cdr_value) for year, cdr_value in zip(years, cdr)}
+
+        #print("this is the trajectory", trajectory)
+        
+        #return trajectory
+    
+
+
+    def compute_global_cdr_trajectory(self, k=0.2, t0=None):
+                """
+                Compute the global carbon dioxide removal (CDR) trajectory using a logistic S-curve
+                that reaches full capacity by 2060 and then remains constant.
+
+                CDR(t) = L * [σ(t) - σ(start)] / [σ(2060) - σ(start)],  for start_year ≤ t ≤ 2060
+                        = L,                                        for t > 2060
+
+                where σ(t) = 1 / (1 + exp(-k*(t - t0))). 
+                By default, t0 is midpoint of start_year and 2060.
+
+                Returns:
+                        dict[int,float]: years → CDR value
+                """
+                import numpy as np
+
+                start = self.start_year
+                peak  = 2060
+                final = 2100
+                L     = self.cdr_level_2100
+
+                # default inflection point to midpoint between start and peak
+                if t0 is None:
+                        t0 = start + 0.5 * (peak - start)
+
+                years = np.arange(start, final + 1)
+                trajectory = {}
+
+                # compute raw logistic
+                raw = 1 / (1 + np.exp(-k * (years - t0)))
+
+                # values at start and at peak for normalization
+                sigma_start = 1 / (1 + np.exp(-k * (start - t0)))
+                sigma_peak  = 1 / (1 + np.exp(-k * (peak  - t0)))
+
+                for t, s in zip(years, raw):
+                        if t <= start:
+                                cdr_t = 0.0
+                        elif t <= peak:
+                                # normalize s to [0,1] over [start,peak] then scale to [0,L]
+                                cdr_t = L * (s - sigma_start) / (sigma_peak - sigma_start)
+                        else:
+                                cdr_t = L
+
+                        trajectory[int(t)] = float(cdr_t)
+
+                return trajectory
+    
+
+
+    
+    def get_decile_income_distribution_data(self):
+        """
+        Gather every country’s decile incomes (year 2100) and their population weights.
+
+        Returns:
+            incomes (np.ndarray): all decile incomes across all countries.
+            weights (np.ndarray): corresponding population in each decile (country.population/10).
+        """
+        incomes = []
+        weights = []
+
+        if self.run_until_2100 != "on":
+            print("Warning: run_until_2100 != 'on'; results may not be for year 2100.")
+
+        for country in self.countries.values():
+            # each decile is 1/10 of the national population
+            decile_pop = country.population / 10.0
+            for decile_num in range(1, 11):
+                incomes.append(getattr(country, f"decile{decile_num}_abs"))
+                weights.append(decile_pop)
+
+        return np.array(incomes), np.array(weights)
+                
           
 
     def run(self):
@@ -575,8 +720,16 @@ class Scenario():
 
         # set up necessary parameters for the scenario
         self.compute_country_scenario_params()
-        # run the scenario over time
-        for year in range(self.start_year, self.end_year): # the scenario must run the change from 2022 to 2023 and as last step the change from endyear - 1 to endyear, it cannot run through endyear again
-            self.step()
+        
+        if self.run_until_2100 == "on":
+                # run the scenario over time
+                for year in range(self.start_year, 2100): 
+                        self.step()
+
+        elif self.run_until_2100 == "off":
+                # run the scenario over time
+                for year in range(self.start_year, self.end_year): # the scenario must run the change from 2022 to 2023 and as last step the change from endyear - 1 to endyear, it cannot run through endyear again
+                        self.step()
 
 
+  

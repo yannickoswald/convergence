@@ -263,31 +263,115 @@ class Country():
                 # compute new state
                 # loop over all deciles and apply the growth rate
                 for decile_num in range(1, 11):
+
+                        # get the decile income and decile specific growth rate
                         decile_income = getattr(self, f'decile{decile_num}_abs')
                         # use self.cagr_by_decile to get the growth rate for the decile
                         cagr = self.cagr_by_decile[f'decile{decile_num}']
-                        # calculate the new income
-                        # distinguish between steady state and non steady state assumption
-                        if self.scenario.steady_state_high_income_assumption == "on":
 
-                                if decile_income >= self.scenario.income_goal:
-                                        new_income = decile_income
-                                else:
+                        # Then distinguish various growth cases for the different scenarios and assumptions
+
+                        ##############################################################################
+                        ######## AFTER REVISION 2.0 DISTINGUISH BETWEEN UP TO 2100 or not ########  
+                        ############################################################################## 
+     
+                        if self.scenario.run_until_2100 == "on":
+                        # check if the year is less than 2100 because above the convergence year 
+                        # the counterfactual case of ongoing economic growth for the richest needs to be considered
+                                if self.year < self.scenario.end_year:
+
+                                        # calculate the new income
+                                        # distinguish between steady state and non steady state assumption
+                                        if self.scenario.steady_state_high_income_assumption == "on":
+                                
+                                                if decile_income >= self.scenario.income_goal:
+                                                        new_income = decile_income
+                                                else:
+                                                        new_income = decile_income * (1 + cagr)
+
+                                        # here the deciles that are already above the income goal are assumed to grow at the historical growth rate of the country        
+                                        elif self.scenario.steady_state_high_income_assumption == "on_with_growth":
+
+                                                if self.gdp_pc_historical_growth > 0:
+                                                         new_income = decile_income * (1 + self.gdp_pc_historical_growth)
+                                                else:
+                                                         new_income = decile_income * (1 + 0.01) # assume low positive growth rate of 1% for all deciles
+                                
+                                                  #if decile_income >= self.scenario.income_goal + 1e-3: # add a small number to avoid floating point errors
+                                                        # if the income is already above the goal then apply the historical growth rate
+                                                        # but only if the growth rate is positive, otherwise do not apply the growth rate
+                                                     #     if self.gdp_pc_historical_growth > 0:
+                                                           #       new_income = decile_income * (1 + self.gdp_pc_historical_growth)
+                                                        #  else: # keep the income as it is
+                                                              #    new_income = decile_income * (1 + 0.01) # assume low positive growth rate of 1% for the richest decile
+                                                  #else:
+                                                          #new_income = decile_income * (1 + cagr)
+
+                                        elif self.scenario.steady_state_high_income_assumption == "off":    
+
+                                                new_income = decile_income * (1 + cagr)
+
+                                if self.year >= self.scenario.end_year:
+
+                                        if self.scenario.steady_state_high_income_assumption == "on_with_growth":
+
+                                                if self.gdp_pc_historical_growth > 0:
+                                                         new_income = decile_income * (1 + self.gdp_pc_historical_growth)
+                                                else:
+                                                         new_income = decile_income * (1 + 0.01) # assume low positive growth rate of 1% for all deciles
+
+                                                #if decile_income > self.scenario.income_goal + 1e-3:
+                                                        # if the income is already above the goal then apply the historical growth rate
+                                                        # but only if the growth rate is positive, otherwise do not apply the growth rate
+                                                 #       if self.gdp_pc_historical_growth > 0:
+                                                  #              new_income = decile_income * (1 + self.gdp_pc_historical_growth)
+                                                   #     else:
+                                                    #            new_income = decile_income * (1 + 0.01) # assume low positive growth rate of 1% for the richest decile
+                                        #else:
+                                                 #       new_income = decile_income # do nothing
+
+                                        else:
+                                                new_income = decile_income # do nothing also because all should be in steady state
+
+
+                        ##############################################################################
+                        ######## BEFORE REVISION 2.0 THIS WAS THE CASE FOR THE SCENARIO "OFF" ########  
+                        ##############################################################################     
+                                                         
+                        elif self.scenario.run_until_2100 == "off":
+
+                                # calculate the new income
+                                # distinguish between steady state and non steady state assumption
+                                if self.scenario.steady_state_high_income_assumption == "on":
+                        
+                                        if decile_income >= self.scenario.income_goal:
+                                                new_income = decile_income
+                                        else:
+                                                new_income = decile_income * (1 + cagr)
+
+                                # here the deciles that are already above the income goal are assumed to grow at the historical growth rate of the country        
+                                elif self.scenario.steady_state_high_income_assumption == "on_with_growth":
+
+
+                                        if self.gdp_pc_historical_growth > 0:
+                                                         new_income = decile_income * (1 + self.gdp_pc_historical_growth)
+                                        else:
+                                                         new_income = decile_income * (1 + 0.01) # assume low positive growth rate of 1% for all deciles
+                        
+                                        #if decile_income >= self.scenario.income_goal:
+                                                # if the income is already above the goal then apply the historical growth rate
+                                                # but only if the growth rate is positive, otherwise do not apply the growth rate
+                                         #       if self.gdp_pc_historical_growth > 0:
+                                         #               new_income = decile_income * (1 + self.gdp_pc_historical_growth)
+                                         #       else: # keep the income as it is
+                                         #               new_income = decile_income
+                                        #else:
+                                         #       new_income = decile_income * (1 + cagr)
+
+                                elif self.scenario.steady_state_high_income_assumption == "off":      
                                         new_income = decile_income * (1 + cagr)
 
-                        # here the deciles that are already above the income goal are assumed to grow at the historical growth rate of the country        
-                        elif self.scenario.steady_state_high_income_assumption == "on_with_growth":
 
-                                if decile_income >= self.scenario.income_goal:
-                                        # if the income is already above the goal then apply the historical growth rate
-                                        new_income = decile_income * (1 + self.gdp_pc_historical_growth)
-                                else:
-                                        new_income = decile_income * (1 + cagr)
-
-                        elif self.scenario.steady_state_high_income_assumption == "off":
-                                new_income = decile_income * (1 + cagr)
-
-                     
                         # set the new income
                         setattr(self, f'decile{decile_num}_abs', new_income)
 
@@ -303,7 +387,7 @@ class Country():
                         ## just apply the empirically found ratio of gdp to mean household income
                         self.gdp_pc =  self.hh_mean / self.gdp_hh_income_ratio                   
                   
-                elif self. scenario.gdp_assumption == "model_ratio":
+                elif self.scenario.gdp_assumption == "model_ratio":
                         # the gdp ratio is conditional on the mean household income see script first data explorations
                         if self.hh_mean < 5000: # use piecewise linear fits from first data explorations for this, so yearly cons. exp/disposable income vs. gdp to mean household income ratio
                                 self.gdp_hh_income_ratio = -0.0000571 * (self.hh_mean) + 0.67
