@@ -607,7 +607,7 @@ class ScenarioSweeper:
             ax.plot(goals, y_vals, marker='o', linestyle='-', label=str(year))
 
         # Labeling
-        ax.set_xlabel('Convergence Income Goal (PPP per capita)')
+        ax.set_xlabel('Convergence Income Goal ($PPP per capita)')
         ax.set_ylabel('Overshoot (Emissions/Budget)', fontweight='bold')
         ax.set_title('Overshoot vs Income Goal')
         ax.set_xticks(goals)
