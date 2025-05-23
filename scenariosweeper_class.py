@@ -72,6 +72,8 @@ class ScenarioSweeper:
         self.gini_coefficient_national = {}
         # national gdp trajectories over time where the key is the scenario specified via the params and the value is the national gdp trajectories over time
         self.national_gdp_trajectories = {}
+        # global population below the income goal (useful for counterfactual scenarios where everyone grows at the same rate) to compare
+        self.population_below_income_goal = {}
         
     def run_scenarios(self):
         
@@ -150,8 +152,9 @@ class ScenarioSweeper:
                             self.final_emissions[scenario_key] = scenario.compute_ending_global_emissions()
                             self.gini_coefficient_national[scenario_key] = scenario.store_national_gini_coefficients()
                             self.national_gdp_trajectories[scenario_key] = scenario.store_national_gdp_trajectories()
+                            self.population_below_income_goal[scenario_key] = scenario.get_population_below_income_goal()
 
-        return self.total_emissions, self.growth_rate_global, self.gini_coefficient_change_rate_global, self.final_emissions, self.gini_coefficient_national, self.national_gdp_trajectories # self.national_gdp_ppp_pc, self.hh_consumption_pc, self.population
+        return self.total_emissions, self.growth_rate_global, self.gini_coefficient_change_rate_global, self.final_emissions, self.gini_coefficient_national, self.national_gdp_trajectories, self.population_below_income_goal # self.national_gdp_ppp_pc, self.hh_consumption_pc, self.population
     
     def create_scenario(self, params):
         # Assuming Scenario is a class that takes a dictionary of parameters
@@ -607,7 +610,7 @@ class ScenarioSweeper:
             ax.plot(goals, y_vals, marker='o', linestyle='-', label=str(year))
 
         # Labeling
-        ax.set_xlabel('Convergence Income Goal ($PPP per capita)')
+        ax.set_xlabel('Convergence Income Goal ($PPP per capita)', size=12)
         ax.set_ylabel('Overshoot (Emissions/Budget)', fontweight='bold')
         ax.set_title('Overshoot vs Income Goal')
         ax.set_xticks(goals)

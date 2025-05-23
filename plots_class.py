@@ -3,6 +3,7 @@ import seaborn as sns
 import pandas as pd
 import os
 from matplotlib.ticker import FuncFormatter
+from collections import defaultdict
 
 
 class Plots():
@@ -180,60 +181,66 @@ class Plots():
 
 
 
-
     def plot_global_economy(self):
         """
-        Description: 
-            A method that plots the global economy trajectory
-        
-        Parameters:
-            None
-        """ 
-        # sum gdp over all countries in the given scenario and also household income and plot the two trajectories over the years
-        # Initialize empty dictionaries to store the global trajectories
-        global_gdp_trajectory = {}
-        global_income_hh_trajectory = {}
+        Description:
+            A method that plots the global economy trajectory: total GDP
+            and total household disposable income (both in PPP $) over time,
+            plus global GDP per capita on a second panel.
+            Also prints the first/last per-capita values and the CAGR.
+        """
+        # 1) build year‐by‐year totals
+        global_gdp       = {}
+        global_income_hh = {}
+        global_pop       = {}
 
-        # Iterate over all countries in the scenario
-        for country in self.scenario.countries.values():
-            # Iterate over the years in the country's GDP per capita trajectory
-            for year, gdp_pc in country.gdppc_trajectory.items():
-                # Multiply the GDP per capita value with the country's population at the given year
-                gdp_total = gdp_pc * country.population_trajectory[year]
+        for c in self.scenario.countries.values():
+            for year, gdp_pc in c.gdppc_trajectory.items():
+                pop = c.population_trajectory[year]
+                global_gdp[year] = global_gdp.get(year, 0) + gdp_pc * pop
+                global_pop[year] = global_pop.get(year, 0) + pop
 
-                # If the year is already in the global trajectory dictionary, add the GDP per capita value to the existing value
-                if year in global_gdp_trajectory:
-                    global_gdp_trajectory[year] +=  gdp_total
-                # Otherwise, create a new entry in the global trajectory dictionary with the GDP per capita value
-                else:
-                    global_gdp_trajectory[year] =  gdp_total
+            for year, hh_pc in c.income_hh_trajectory.items():
+                pop = c.population_trajectory[year]
+                global_income_hh[year] = global_income_hh.get(year, 0) + hh_pc * pop
 
-            # Iterate over the years in the country's household income trajectory
-            for year, income_hh in country.income_hh_trajectory.items():
-                # Multiply the household income value with the country's population at the given year
-                income_hh_total = income_hh*country.population_trajectory[year]
+        # 2) sort & extract series
+        years         = sorted(global_gdp)
+        gdp_series    = [global_gdp[y]        for y in years]
+        hh_series     = [global_income_hh.get(y, 0) for y in years]
+        gdp_pc_series = [global_gdp[y] / global_pop[y] for y in years]
 
-                # If the year is already in the global trajectory dictionary, add the household income value to the existing value
-                if year in global_income_hh_trajectory:
-                    global_income_hh_trajectory[year] += income_hh_total
-                # Otherwise, create a new entry in the global trajectory dictionary with the household income value
-                else:
-                    global_income_hh_trajectory[year] = income_hh_total
+        # --- NEW: print first/last and compute CAGR ---
+        start_year, end_year = years[0], years[-1]
+        start_val = gdp_pc_series[0]
+        end_val   = gdp_pc_series[-1]
+        period_years = end_year - start_year
 
-        # Sort the global trajectories by year
-        sorted_years = sorted(global_gdp_trajectory.keys())
-        sorted_gdp_trajectory = [global_gdp_trajectory[year] for year in sorted_years]
-        sorted_income_hh_trajectory = [global_income_hh_trajectory[year] for year in sorted_years]
+        # compound annual growth rate
+        cagr = (end_val / start_val) ** (1 / period_years) - 1
 
-        # Plot the global trajectories
-        fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(sorted_years, sorted_gdp_trajectory)
-        ax.plot(sorted_years, sorted_income_hh_trajectory)
-        ax.set_xlabel('Year')
-        ax.set_ylabel('$ (PPP)')
-        ax.legend(['Global GDP (Total)', 'Global HH disposable income (Total)'])
-        ax.margins(0)
-        ax.set_ylim(bottom=0)
+        print(f"Global GDP per Capita in {start_year}: ${start_val:,.2f}")
+        print(f"Global GDP per Capita in {end_year}:   ${end_val:,.2f}")
+        print(f"CAGR from {start_year} to {end_year}:  {cagr * 100:.2f}%\n")
+
+        # 3) plot in two rows
+        fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(10, 8), sharex=True)
+
+        # Top panel: totals
+        ax1.plot(years, gdp_series, label='Global GDP (Total)')
+        ax1.plot(years, hh_series,  label='Global HH disposable income (Total)')
+        ax1.set_ylabel('$ (PPP)')
+        ax1.legend()
+        ax1.margins(0)
+        ax1.set_ylim(bottom=0)
+
+        # Bottom panel: per capita
+        ax2.plot(years, gdp_pc_series, label='Global GDP per Capita')
+        ax2.set_xlabel('Year')
+        ax2.set_ylabel('GDP per Capita $ (PPP)')
+        ax2.margins(0)
+        ax2.set_ylim(bottom=0)
+
         plt.tight_layout()
         plt.show()
 
@@ -357,43 +364,42 @@ class Plots():
         plt.show()
 
     def plot_global_gdp_per_capita(self):
+        """
+        Computes and plots global GDP per capita over time by:
+        1. Accumulating each country's population per year.
+        2. Converting each country's per-capita GDP into total GDP (gdp_pc * pop).
+        3. Summing across countries for global totals.
+        4. Dividing global GDP by global population for each year.
+        """
 
-        # plot global gdp per capita but first you must compute total gdp per country, sum this over all countries and then divide by the global population
-        # Initialize an empty dictionary to store the global gdp per capita trajectory
-        global_gdp_per_capita_trajectory = {}
-        # Compute total GDP per country sum globally but per year 
-        total_gdp = {}
+        total_gdp = defaultdict(float)
+        total_pop = defaultdict(float)
+
         for country in self.scenario.countries.values():
-            for year, gdp in country.gdppc_trajectory.items():
-                if year not in total_gdp:
-                    total_gdp[year] = 0
-                total_gdp[year] += gdp*country.population_trajectory[year]
-        
-        # Compute total population per year globally
-        total_population = {}
-        for country in self.scenario.countries.values():
-            for year, population in country.population_trajectory.items():
-                if year not in total_population:
-                    total_population[year] = 0
-                total_population[year] += population
+            # assume country.population_trajectory is a dict {year: population}
+            # and country.gdp_trajectory is a dict {year: gdp_per_capita}
+            for year, pop in country.population_trajectory.items():
+                gdp_pc = country.gdppc_trajectory.get(year)
+                if gdp_pc is None:
+                    # no GDP data for this year → skip
+                    continue
 
-        # Compute global GDP per capita trajectory
-        global_gdp_per_capita_trajectory = {year: total_gdp[year] / total_population[year] for year in total_population.keys()}
+                total_pop[year] += pop
+                total_gdp[year] += gdp_pc * pop
 
-        # Sort the global GDP per capita trajectory by year
-        sorted_years = sorted(global_gdp_per_capita_trajectory.keys())
-        sorted_gdp_per_capita_trajectory = [global_gdp_per_capita_trajectory[year] for year in sorted_years]
+        # sort years where we have both pop & GDP
+        years = sorted(set(total_pop) & set(total_gdp))
+        gdp_per_capita_global = [total_gdp[y] / total_pop[y] for y in years]
 
-        # Plot the global GDP per capita trajectory
+        # Plot
         fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(sorted_years, sorted_gdp_per_capita_trajectory)
-        ax.set_xlabel('Year')
-        ax.set_ylabel('GDP per Capita ($)')
+        ax.plot(years, gdp_per_capita_global, linestyle='-')
+        ax.set(xlabel='Year', ylabel='Global GDP per Capita ($)')
+        ax.set_title('Global GDP per Capita Over Time')
         ax.margins(0)
         ax.set_ylim(bottom=0)
         plt.tight_layout()
         plt.show()
-
 
 
     def plot_growth_rates_distribution(self, ax = None):

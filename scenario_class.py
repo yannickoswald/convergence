@@ -531,28 +531,17 @@ class Scenario():
         Parameters:
                 None
         """
-        
-
 
         # loop over all countries for country specific steps
         for country in self.countries.values():
                 country.technological_change()
-                # Differentiate between scenarios that run regardless of end year to 2100 and those that stop at the end year
-                # if self.run_until_2100 == "on":
-                        # check if the year is less than 2100
-                       #  if country.year < self.end_year:
-                                # run the scenario until 2100
-                               #  country.economic_growth()
-                #  else:
-                        # country.economic_growth()
-
                 country.economic_growth()
                 country.population_growth()
                 country.update_emissions()
                 country.calculate_current_carbon_budget()
-                country.calculate_national_gini_coefficient()
-                country.year += 1 # increase the year by one
-                country.save_current_state() # save the current state of the country
+                country.calculate_national_gini_coefficient()       
+                country.year += 1
+                country.save_current_state()
 
         # global level steps such as gini coefficient calculation
         
@@ -706,9 +695,39 @@ class Scenario():
                 weights.append(decile_pop)
 
         return np.array(incomes), np.array(weights)
-                
-          
+    
 
+
+    def get_population_below_income_goal(self):
+        """
+        Compute the share of the total population (in year 2100) 
+        whose decile income is below self.income_goal.
+
+        Returns:
+                float: fraction of the total population with decile income < self.income_goal.
+        """
+        if self.run_until_2100 != "on":
+                print("Warning: run_until_2100 != 'on'; results may not be for year 2100.")
+
+        pop_below = 0.0
+        total_pop = 0.0
+
+        for country in self.countries.values():
+                # country.population is the total pop in 2100
+                total_pop += country.population
+
+                # each decile is 1/10 of the country's pop
+                decile_pop = country.population / 10.0
+
+                # check each decile’s absolute income
+                for d in range(1, 11):
+                        income = getattr(country, f"decile{d}_abs")
+                        if income < self.income_goal:
+                                pop_below += decile_pop
+
+        # avoid division by zero
+        return pop_below / total_pop if total_pop > 0 else 0.0
+          
     def run(self):
 
         """
@@ -723,7 +742,7 @@ class Scenario():
         
         if self.run_until_2100 == "on":
                 # run the scenario over time
-                for year in range(self.start_year, 2100): 
+                for year in range(self.start_year, 2100): # the step function must be last executed in 2099, hence only run until 2100 - 1
                         self.step()
 
         elif self.run_until_2100 == "off":

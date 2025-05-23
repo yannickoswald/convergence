@@ -122,10 +122,10 @@ class Country():
                 #### ECONOMIC VARIABLES ####
                 # add current year and current income to the income trajectory
                 # if the year is 2022 then the income is the mean household income times 365 to get the annual income otherwise it is annual already
-                if self.year == 2022:
-                        self.income_hh_trajectory[self.year] = self.hh_mean*365 # this is the mean household cons.income
-                else: # otherwise it is annual already
-                        self.income_hh_trajectory[self.year] = self.hh_mean
+                 # if self.year == 2022:
+                    #      self.income_hh_trajectory[self.year] = self.hh_mean*365 # this is the mean household cons.income
+                 # else: # otherwise it is annual already
+                self.income_hh_trajectory[self.year] = self.hh_mean
                 
                 self.gdppc_trajectory[self.year] = self.gdp_pc # this is the mean gross domestic product per capita
                 self.gdp_trajectory[self.year] = self.gdp_pc * self.population # this is the gross domestic product of the country
@@ -293,9 +293,10 @@ class Country():
                                         elif self.scenario.steady_state_high_income_assumption == "on_with_growth":
 
                                                 if self.gdp_pc_historical_growth > 0:
-                                                         new_income = decile_income * (1 + self.gdp_pc_historical_growth)
+                                                         # household income growth is assumed to be 85% of the gdp growth because the elasticity of income growth with respect to gdp growth is 0.85 https://ourworldindata.org/grapher/median-daily-per-capita-expenditure-vs-gdp-per-capita
+                                                         new_income = decile_income * (1 + 0.02) # Growth rate is set so that the GDPpc growth rate matches SSP2 IIASA version
                                                 else:
-                                                         new_income = decile_income * (1 + 0.01) # assume low positive growth rate of 1% for all deciles
+                                                         new_income = decile_income * (1 + 0.02) # Growth rate is set so that the GDPpc growth rate matches SSP2 IIASA version
                                 
                                                   #if decile_income >= self.scenario.income_goal + 1e-3: # add a small number to avoid floating point errors
                                                         # if the income is already above the goal then apply the historical growth rate
@@ -316,9 +317,9 @@ class Country():
                                         if self.scenario.steady_state_high_income_assumption == "on_with_growth":
 
                                                 if self.gdp_pc_historical_growth > 0:
-                                                         new_income = decile_income * (1 + self.gdp_pc_historical_growth)
+                                                         new_income = decile_income * (1 + 0.02) # Growth rate is set so that the GDPpc growth rate matches SSP2 IIASA version
                                                 else:
-                                                         new_income = decile_income * (1 + 0.01) # assume low positive growth rate of 1% for all deciles
+                                                         new_income = decile_income * (1 + 0.02) # Growth rate is set so that the GDPpc growth rate matches SSP2 IIASA version
 
                                                 #if decile_income > self.scenario.income_goal + 1e-3:
                                                         # if the income is already above the goal then apply the historical growth rate
