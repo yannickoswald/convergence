@@ -604,10 +604,20 @@ class ScenarioSweeper:
         else:
             fig = ax.get_figure()
 
-        # Plot one line per year
-        for year in years:
+
+        # ─── Colorblind-friendly palette ─────────────────────────────────────────────
+        # Okabe–Ito palette (first 4 colors)
+        cb_colors = ["#E69F00", "#56B4E9", "#009E73", "#CC79A7"]
+
+        # Plot one line per year using color from the palette
+        for i, year in enumerate(years):
+            # Use modulo to cycle through colors if more than 4 years
+            color = cb_colors[i % len(cb_colors)]
             y_vals = [data[year].get(g, np.nan) for g in goals]
-            ax.plot(goals, y_vals, marker='o', linestyle='-', label=str(year))
+            ax.plot(goals, y_vals, marker='o', linestyle='-', label=str(year), color=color)
+        # for year in years:
+          #   y_vals = [data[year].get(g, np.nan) for g in goals]
+            # ax.plot(goals, y_vals, marker='o', linestyle='-', label=str(year))
 
         # Labeling
         ax.set_xlabel('Convergence Income Goal ($PPP per capita)', size=12)
