@@ -214,6 +214,7 @@ class Plots():
         start_year, end_year = years[0], years[-1]
         start_val = gdp_pc_series[0]
         end_val   = gdp_pc_series[-1]
+        print(f"Global GDP per Capita from {start_year} to {end_year}:")
         period_years = end_year - start_year
 
         # compound annual growth rate
@@ -222,6 +223,8 @@ class Plots():
         print(f"Global GDP per Capita in {start_year}: ${start_val:,.2f}")
         print(f"Global GDP per Capita in {end_year}:   ${end_val:,.2f}")
         print(f"CAGR from {start_year} to {end_year}:  {cagr * 100:.2f}%\n")
+
+    
 
         # 3) plot in two rows
         fig, (ax1, ax2) = plt.subplots(nrows=2, ncols=1, figsize=(10, 8), sharex=True)

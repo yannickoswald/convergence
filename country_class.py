@@ -293,7 +293,6 @@ class Country():
                                         elif self.scenario.steady_state_high_income_assumption == "on_with_growth":
 
                                                 if self.gdp_pc_historical_growth > 0:
-                                                         # household income growth is assumed to be 85% of the gdp growth because the elasticity of income growth with respect to gdp growth is 0.85 https://ourworldindata.org/grapher/median-daily-per-capita-expenditure-vs-gdp-per-capita
                                                          new_income = decile_income * (1 + 0.02) # Growth rate is set so that the GDPpc growth rate matches SSP2 IIASA version
                                                 else:
                                                          new_income = decile_income * (1 + 0.02) # Growth rate is set so that the GDPpc growth rate matches SSP2 IIASA version
@@ -439,7 +438,7 @@ class Country():
                                         new_population = self.population * (1 + self.pop_growth_rate)
                                         self.population = new_population
                                 else:
-                                        # if degrowing from 2023 onwards keep population growth as it has been in 2022, preservation of socio-cultural norms
+                                        # if degrowing from 2023 onwards keep population growth as it has been in 2022, that is, preservation of socio-cultural norms
                                         self.pop_growth_rate = 0.0874 - 0.0190*np.log10(self.gdppc_trajectory[2022])
                                         new_population = self.population * (1 + self.pop_growth_rate)
                                         self.population = new_population

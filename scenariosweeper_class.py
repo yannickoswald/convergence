@@ -155,7 +155,6 @@ class ScenarioSweeper:
                             self.population_below_income_goal[scenario_key] = scenario.get_population_below_income_goal()
 
         return self.total_emissions, self.growth_rate_global, self.gini_coefficient_change_rate_global, self.final_emissions, self.gini_coefficient_national, self.national_gdp_trajectories, self.population_below_income_goal # self.national_gdp_ppp_pc, self.hh_consumption_pc, self.population
-    
     def create_scenario(self, params):
         # Assuming Scenario is a class that takes a dictionary of parameters
         # and has methods compute_country_scenario_params() and run()
@@ -362,7 +361,7 @@ class ScenarioSweeper:
             # Annotate the point with a marker
             ax.scatter(x_coord_2100, y_coord_20000, color='red', s=100, zorder=5)
             # Annotate with text and a straight line pointing to the point
-            ax.annotate("2100\n Denmark\n scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-30, 40), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
+            ax.annotate("Denmark\n2100\nscenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-30, 40), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
         except ValueError:
             print("Specified year or income goal not found in the dataset for the 2100 scenario.")
 
@@ -388,7 +387,7 @@ class ScenarioSweeper:
         # annotate costa rica scenario dot and pure redistr. scenario dot with values
         #COSTA RICA SCENARIO
         ax.scatter(2060, 10000, s=100, c='blue', marker='o', zorder = 5, label='Costa Rica')
-        ax.annotate("2060\nCosta Rica\nscenario", (2060, 10000), textcoords="offset points", xytext=(30,30), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
+        ax.annotate("Costa Rica\n2060\nscenario", (2060, 10000), textcoords="offset points", xytext=(30,30), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
 
         #PURE REDISTR. SCENARIO
         #ax.scatter(2060, 7000, s=100, c='black', marker='o', zorder = 5, label='Redistr. 2060')
@@ -545,7 +544,7 @@ class ScenarioSweeper:
                 ax.scatter(x_coord_2100, y_coord_20000, color='red', s=100, zorder=5)
 
                 # Annotate with text and a straight line pointing to the point
-                ax.annotate("2100 Denmark scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-80,-20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
+                ax.annotate("Denmark 2100 scenario", (x_coord_2100, y_coord_20000), textcoords="offset points", xytext=(-80,-20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
             except ValueError:
                 print("Specified year or income goal not found in the dataset for the 2100 scenario.")
 
@@ -561,7 +560,7 @@ class ScenarioSweeper:
                 ax.scatter(x_coord_2050, y_coord_9100, color='blue', s=100, zorder=5)  # Use a different color for distinction
 
                 # Annotate with text and a straight line pointing to the point
-                ax.annotate("2060 Costa Rica scenario", (x_coord_2050, y_coord_9100), textcoords="offset points", xytext=(50,20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
+                ax.annotate("Costa Rica 2060 scenario", (x_coord_2050, y_coord_9100), textcoords="offset points", xytext=(50,20), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
             except ValueError:
                 print("Specified year or income goal not found in the dataset for the 2060 scenario.")
 
