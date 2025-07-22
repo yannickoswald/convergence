@@ -2,7 +2,7 @@
 
 ## Repository Overview
 
-This repository stores all code related to the paper **Oswald, 2024, Global convergence of incomes in a climate-constrained world** (in preparation/review).
+This repository stores all code related to the paper **Oswald & Millward-Hopkins, 2025, The Carbon Emissions of Global Income Convergence Scenarios** https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5333077 (in preparation/review).
 
 All relevant output figures for this paper are produced in Jupyter notebooks. These notebooks employ the classes that represent the actual model, which are Python files.
 
