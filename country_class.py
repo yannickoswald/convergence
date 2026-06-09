@@ -101,9 +101,18 @@ class Country():
                 self.gdppc_trajectory[self.year] = self.gdp_pc # this is the mean gross domestic product per capita
                 self.population_trajectory[self.year] = self.population # this is the population
                 self.carbon_intensity_trajectory[self.year] = self.carbon_intensity # this is the carbon intensity of the country
-                self.emissions_trajectory[self.year] = self.carbon_intensity * self.gdp_pc * self.population / 1000 # this is the emissions of the country, divide by 1000 to get to metric tons from kg
-                self.carbon_emissions_pc_trajectory[self.year] = self.carbon_intensity/1000 * self.gdp_pc # this is the carbon emissions per capita of the country in tonnes
-
+                
+                # -- ELASTICITY INITIALIZATION ADDITIONS --
+                self.base_carbon_intensity = self.carbon_intensity
+                self.decile_carbon_intensities = {}
+                self.base_A = None
+                
+                # Execute emission calculation for 2022 to populate baseline values
+                self.update_emissions()
+                
+                # Set initial trajectories based on the dynamically calculated total_emissions
+                self.emissions_trajectory[self.year] = self.total_emissions
+                self.carbon_emissions_pc_trajectory[self.year] = self.total_emissions / self.population if self.population > 0 else 0
 
                 # set more variables necessary to compute the country carbon budget consistent behaviour
                 self.diff_budget_and_emissions = None
@@ -131,8 +140,8 @@ class Country():
                 self.gdp_trajectory[self.year] = self.gdp_pc * self.population # this is the gross domestic product of the country
                 self.population_trajectory[self.year] = self.population # this is the population
                 self.carbon_intensity_trajectory[self.year] = self.carbon_intensity # this is the carbon intensity of the country
-                self.emissions_trajectory[self.year] = self.carbon_intensity * self.gdp_pc * self.population / 1000 # this is the emissions of the country, divide by 1000 to get to metric tons from kg
-                self.carbon_emissions_pc_trajectory[self.year] = self.carbon_intensity/1000 * self.gdp_pc # this is the carbon emissions per capita of the country in tonnes
+                self.emissions_trajectory[self.year] = self.total_emissions
+                self.carbon_emissions_pc_trajectory[self.year] = self.total_emissions / self.population if self.population > 0 else 0 # this is the carbon emissions per capita of the country in tonnes
                 self.gini_coefficient_trajectory[self.year] = self.gini_hh # this is the gini coefficient of the country
                 # add and save current decile incomes to the decile trajectories where every decile in the dictionary is another dictionary with the years as keys and the decile incomes as values
                 for decile_num in range(1, 11):
@@ -238,17 +247,34 @@ class Country():
 
                 
         def update_emissions(self):
-
                 """
                 Description: 
-                        A method computing the emissions of the country. 
-
-                Parameters:
-                        None
-
+                        A method computing the emissions of the country by summing the 
+                        heterogeneous emissions of each decile based on elasticity.
                 """
-                self.total_emissions = self.carbon_intensity * self.gdp_pc * self.population / 1000 # this is the emissions of the country, divide by 1000 to get to metric tons from kg        
-
+                assumption = getattr(self.scenario, 'emission_elasticity_assumption', 'off')
+                
+                if assumption == "off":
+                        self.total_emissions = self.carbon_intensity * self.gdp_pc * self.population / 1000 
+                else:
+                        # 1. Update the decile-specific carbon intensities based on tech & elasticity
+                        self.update_decile_carbon_intensities()
+                        
+                        total_scaled_emissions = 0
+                        mean_income = self.hh_mean if self.hh_mean > 0 else 1.0
+                        macro_gdp = self.gdp_pc * self.population
+                        
+                        # 2. Sum up decile emissions using their specific carbon intensity
+                        for d in range(1, 11):
+                                yd = getattr(self, f'decile{d}_abs')
+                                ci_d = self.decile_carbon_intensities[f'decile{d}']
+                                
+                                # Decile's share of GDP is proportional to its share of income
+                                gdp_d = macro_gdp * (yd / (10 * mean_income))
+                                
+                                total_scaled_emissions += (ci_d * gdp_d) / 1000
+                                
+                        self.total_emissions = total_scaled_emissions
 
         def economic_growth(self):
 
@@ -551,6 +577,54 @@ class Country():
                         # Compute the gini coefficient
                         self.gini_hh = numerator / denominator
 
+        def get_current_elasticity(self):
+                assumption = getattr(self.scenario, 'emission_elasticity_assumption', 'off')
+                
+                if assumption == "constant":
+                        return getattr(self.scenario, 'base_elasticity', 1.0)
+                elif assumption == "income_dependent":
+                        # Get bounds from scenario or use defaults
+                        e_min = getattr(self.scenario, 'elasticity_min', 0.5)
+                        e_max = getattr(self.scenario, 'elasticity_max', 1.5)
+                        
+                        # Calculate elasticity based on GDPpc
+                        # This formula maps: 
+                        # 1k GDPpc -> e_max
+                        # 100k GDPpc -> e_max - (e_max - e_min) * 0.4 roughly
+                        elasticity = e_max - 0.2 * np.log10(max(1, self.gdp_pc / 1000))
+                        
+                        return max(e_min, min(e_max, elasticity))
+                else:
+                        return 1.0
+
+        def update_decile_carbon_intensities(self):
+                """
+                Splits the macro carbon intensity into heterogeneous decile intensities.
+                In 2022, it calibrates a baseline scalar 'A' to perfectly match macro emissions.
+                In future years, 'A' scales with macro technological change, while the 
+                distribution naturally shifts based on current elasticity and inequality.
+                """
+                epsilon = self.get_current_elasticity()
+                decile_incomes = [getattr(self, f'decile{d}_abs') for d in range(1, 11)]
+                mean_income = self.hh_mean if self.hh_mean > 0 else 1.0
+                
+                # Calculate the denominator for the normalization factor
+                sum_ratios_eps = sum((yd / mean_income) ** epsilon for yd in decile_incomes)
+                
+                if self.year == 2022:
+                        # Calibrate base_A so sum of decile emissions exactly equals macro emissions in 2022
+                        self.base_A = (10 * self.carbon_intensity) / sum_ratios_eps if sum_ratios_eps > 0 else self.carbon_intensity
+                
+                # Scale current A by how much macro carbon_intensity has improved since 2022
+                current_A = self.base_A * (self.carbon_intensity / self.base_carbon_intensity)
+                
+                # Generate the heterogeneous decile carbon intensities
+                for i, yd in enumerate(decile_incomes):
+                        d = i + 1
+                        ratio = yd / mean_income
+                        # CI_d = A * ratio^(epsilon - 1). Fallback to 0 if income is 0 to avoid ZeroDivisionError
+                        ci_d = current_A * (ratio ** (epsilon - 1)) if ratio > 0 else 0
+                        self.decile_carbon_intensities[f'decile{d}'] = ci_d
 
         def __repr__(self): # This is the string representation of the object
                 # Retrieve the dynamic attributes by removing the 'country_' prefix and format them.

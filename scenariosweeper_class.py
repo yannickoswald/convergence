@@ -334,9 +334,9 @@ class ScenarioSweeper:
         #   return '2.5°C 50%'
         #ax.clabel(contour_line_2, fmt=custom_fmt2, inline=True, fontsize=8)
 
-        # Extract paths
-        paths_2_degree_budget = contour_line_0.collections[0].get_paths()
-        paths_2_degree_budget_50pct = contour_line_1.collections[0].get_paths()
+        # Extract paths (compatible with Matplotlib < 3.8 and >= 3.8)
+        paths_2_degree_budget = contour_line_0.get_paths() if not hasattr(contour_line_0, 'collections') else contour_line_0.collections[0].get_paths()
+        paths_2_degree_budget_50pct = contour_line_1.get_paths() if not hasattr(contour_line_1, 'collections') else contour_line_1.collections[0].get_paths()
 
         def extract_coordinates(paths):
             coords_list = []
@@ -758,7 +758,8 @@ class ScenarioSweeper:
         ax.clabel(contour_line_00, inline=True, fmt = {0.01: "<1%"}, fontsize=10)
 
         #Extract paths
-        paths_0 = contour_line_0.collections[0].get_paths()
+        #Extract paths (compatible with Matplotlib < 3.8 and >= 3.8)
+        paths_0 = contour_line_0.get_paths() if not hasattr(contour_line_0, 'collections') else contour_line_0.collections[0].get_paths()
         #paths_004 = contour_line_004.collections[0].get_paths()
 
         # Function to extract X, Y coordinates from contour paths
