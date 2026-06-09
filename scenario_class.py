@@ -57,7 +57,7 @@ class Scenario():
         self.gdp_assumption = self.validate_assumption(scenario_params, "gdp_assumption", ["constant_ratio", "model_ratio"])
         self.pop_growth_assumption = self.validate_assumption(scenario_params, "pop_growth_assumption", ["UN_medium", "semi_log_model", "semi_log_model_elasticity"])
         self.tech_evolution_assumption = self.validate_assumption(scenario_params, "tech_evolution_assumption", ["plausible", "necessary"])
-        self.tech_hysteresis_assumption = self.validate_assumption(scenario_params, "tech_hysteresis_assumption", ["on", "off"])
+        self.tech_hysteresis_assumption = self.validate_assumption(scenario_params, "tech_hysteresis_assumption", ["optimistic_degrowth", "pessimistic_degrowth", "off"])
         self.steady_state_high_income_assumption = self.validate_assumption(scenario_params, "steady_state_high_income_assumption", ["on", "off", "on_with_growth"])
         self.population_hysteresis_assumption = self.validate_assumption(scenario_params, "population_hysteresis_assumption", ["on", "off"])
         self.cdr_assumption = self.validate_assumption(scenario_params, "cdr_assumption", ["on", "off"])

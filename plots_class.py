@@ -320,7 +320,10 @@ class Plots():
         years_lin, emissions_lin = self.scenario.compute_linear_carbon_budget_pathway()
         ax.plot(years_lin+2022, emissions_lin*1e9, color="tab:orange", label="Linear Budget") # convert from years to 2022 plus the years required and from gigatonnes to metric tonnes
         
-   
+        # save the emissions in gigatonnes data to a csv file in the data folder with the name "global_emissions_trajectory.csv" with two columns "year" and "emissions"
+        emissions_data = pd.DataFrame({"year": sorted_years, "emissions": [e/1e9 for e in sorted_emissions_trajectory]}) # convert to gigatonnes
+        emissions_data.to_csv("data/global_emissions_trajectory.csv", index=False)
+
         # plot exponential carbon budget pathway
         #years_exp, emissions_exp = self.scenario.compute_exponential_carbon_budget_pathway()
         #ax.plot(years_exp+2022, emissions_exp*1e9, color = "tab:red")

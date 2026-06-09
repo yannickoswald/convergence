@@ -196,9 +196,12 @@ class Country():
                 # which is this equation y = -0.015ln(x) + 0.1309 where x is the gdp per capita in 2022 and y is the trend in carbon intensity from 2010 to 2020
                 else:   
                         # distinguish between the two cases of country that grows or degrows its average gdp per capita and hence introduce hysteresis in the technological change
-                        if self.scenario.tech_hysteresis_assumption == "on":
+                        if self.scenario.tech_hysteresis_assumption == "optimistic_degrowth":
 
                                 if self.cagr_average > 0:
+
+                                        # if economic growth is positive then we apply the modelled trend and sigmoidal average 
+                                        #  this assumption ensure that growing economies make advances in decarbonization
 
                                         modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
                                         z = self.scenario.final_improvement_rate ## this is a constant  uniform value for the carbon intensity decline that the world adopts slowly and then rapidly.
@@ -211,8 +214,34 @@ class Country():
                                         #assume progress in technology under planned degrowth i.e. -1% per year
                                         self.carbon_intensity = self.carbon_intensity * (1 + self.scenario.final_improvement_rate) # CAREFUL RATE GIVEN IS NEGATIVE so + operator leads to multiplier < 1
 
+
+                        elif self.scenario.tech_hysteresis_assumption == "pessimistic_degrowth":
+
+                                if self.cagr_average > 0:
+
+                                        # if economic growth is positive then we apply the modelled trend and sigmoidal average 
+                                        #  this assumption ensure that growing economies make advances in decarbonization
+
+                                        modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
+                                        z = self.scenario.final_improvement_rate ## this is a constant  uniform value for the carbon intensity decline that the world adopts slowly and then rapidly.
+                                        k = self.scenario.k # this is the steepness of the sigmoidal function
+                                        t0 = self.scenario.t0 # this is the midpoint of the sigmoidal function
+                                        weighted_model = weighted_average(self.year, modelled_trend, z,  k=k, t0=t0)
+                                        self.carbon_intensity = self.carbon_intensity * (1 + weighted_model)
+                                else:
+                                        # if the country is in a planned degrowth scenario then assume the fixed progress in technology i.e. -1% per year already from the start
+                                        #assume progress in technology under planned degrowth i.e. -1% per year
+                                        #self.carbon_intensity = self.carbon_intensity * (1 + self.scenario.final_improvement_rate) # CAREFUL RATE GIVEN IS NEGATIVE so + operator leads to multiplier < 1
+                                        # IMPORTANT we now weaken this assumption and just keep the carbon intensity constant in the case of degrowth because it is not clear that planned degrowth economies would also revert socio-cultural norms to lower technological progress and innovation rates, so we assume preservation of the technology
+                                        # print this is country and this is the cagr average and this is the carbon intensity
+                                        print(f"This is country {self.code}, this is the CAGR average: {self.cagr_average}, and this is the carbon intensity: {self.carbon_intensity}")
+                                        self.carbon_intensity = self.carbon_intensity # do nothing
+
                         elif self.scenario.tech_hysteresis_assumption == "off":
 
+                        
+                                # # #  all countries are treated according to the same mechanics regardless of income trajectory 
+   
                                 modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
                                 z = self.scenario.final_improvement_rate ## this is a constant  uniform value for the carbon intensity decline that the world adopts slowly and then rapidly.
                                 k = self.scenario.k # this is the steepness of the sigmoidal function
