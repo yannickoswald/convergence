@@ -1,6 +1,13 @@
-
 # Data manipulation and analysis
 pandas
+numpy
+pyarrow
+seaborn
+pyarrow
+scipy
+
+# Utilities
+tqdm
 
 # Plotting and visualization
 matplotlib

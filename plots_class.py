@@ -666,10 +666,11 @@ class Plots():
         """
         Description:
             Plots the absolute carbon emissions trajectory for each income decile 
-            of a specific country. Reconstructs decile emissions dynamically 
-            to perfectly account for the current elasticity assumptions.
+            of a specific country, reading directly from the country's stored 
+            decile_emissions_trajectories.
         """
         import numpy as np
+        import matplotlib.pyplot as plt
         import matplotlib.cm as cm
 
         country = self.scenario.countries[country_identifier]
@@ -679,58 +680,19 @@ class Plots():
             fig, ax = plt.subplots(figsize=(8, 5))
             show_plot = True
             
-        # FIX: Get years strictly from decile_trajectories to avoid missing 2022 key
-        years = sorted(list(country.decile_trajectories['decile1'].keys()))
-        assumption = getattr(self.scenario, 'emission_elasticity_assumption', 'off')
+        # Get years strictly from the stored emissions trajectories
+        years = sorted(list(country.decile_emissions_trajectories['decile1'].keys()))
         
-        # Read the baseline parameters already stored safely in the country object
-        base_A = getattr(country, 'base_A', None)
-        base_carbon_intensity = getattr(country, 'base_carbon_intensity', None)
-
-        # Dictionary to hold trajectories for plotting
-        decile_emissions_trajectories = {d: [] for d in range(1, 11)}
-        
-        for year in years:
-            gdp_pc = country.gdppc_trajectory[year]
-            pop = country.population_trajectory[year]
-            macro_gdp = gdp_pc * pop
-            mean_income = country.income_hh_trajectory[year] if country.income_hh_trajectory[year] > 0 else 1.0
-            macro_ci = country.carbon_intensity_trajectory[year]
-            
-            if assumption == "off":
-                # Standard Baseline (No elasticity)
-                for d in range(1, 11):
-                    yd = country.decile_trajectories[f'decile{d}'][year]
-                    gdp_d = macro_gdp * (yd / (10 * mean_income))
-                    emissions_d = (macro_ci * gdp_d) / 1000
-                    decile_emissions_trajectories[d].append(emissions_d)
-            else:
-                # With Elasticity applied
-                if assumption == "constant":
-                    eps = getattr(self.scenario, 'base_elasticity', 1.0)
-                elif assumption == "income_dependent":
-                    e_min = getattr(self.scenario, 'elasticity_min', 0.5)
-                    e_max = getattr(self.scenario, 'elasticity_max', 1.5)
-                    eps = max(e_min, min(e_max, e_max - 0.2 * np.log10(max(1, gdp_pc / 1000))))
-                else:
-                    eps = 1.0
-                    
-                current_A = base_A * (macro_ci / base_carbon_intensity) if (base_A and base_carbon_intensity) else macro_ci
-                
-                for d in range(1, 11):
-                    yd = country.decile_trajectories[f'decile{d}'][year]
-                    ratio = yd / mean_income
-                    ci_d = current_A * (ratio ** (eps - 1)) if ratio > 0 else 0
-                    gdp_d = macro_gdp * (yd / (10 * mean_income))
-                    emissions_d = (ci_d * gdp_d) / 1000
-                    decile_emissions_trajectories[d].append(emissions_d)
-                    
         # --- Plot Formatting ---
         # Generate a colormap from light green (poor) to dark purple (rich)
         colors = cm.viridis(np.linspace(0, 1, 10))
         
+        # Loop through all 10 deciles and plot the tracked data directly
         for d in range(1, 11):
-            ax.plot(years, decile_emissions_trajectories[d], label=f'Decile {d}', color=colors[d-1], lw=2)
+            # Extract the emissions for the specific decile across all years
+            emissions_data = [country.decile_emissions_trajectories[f'decile{d}'][year] for year in years]
+            
+            ax.plot(years, emissions_data, label=f'Decile {d}', color=colors[d-1], lw=2)
             
         ax.set_title(country_identifier, fontsize=14, fontweight='bold')
         ax.set_xlabel('Year', fontsize=11)
@@ -743,7 +705,6 @@ class Plots():
             ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', frameon=False)
             plt.tight_layout()
             plt.show()
-
 
 
 

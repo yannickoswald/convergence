@@ -45,7 +45,20 @@ class Scenario():
         self.t0 = scenario_params["t0"]
         self.final_improvement_rate = scenario_params["final_improvement_rate"]
 
-    
+        
+
+           # --- NEW ELASTICITY ASSUMPTIONS TO ADD ---
+        # 1. Validates which elasticity logic to use (defaults to 'off' if you forget to include it in older scenario setups)
+        self.emission_elasticity_assumption = scenario_params.get("emission_elasticity_assumption", "off")
+        if self.emission_elasticity_assumption not in ["off", "constant", "income_dependent"]:
+            raise ValueError("emission_elasticity_assumption must be one of ['off', 'constant', 'income_dependent']")
+            
+        # 2. Extracts the numerical parameters (with safe fallbacks)
+        self.base_elasticity = scenario_params.get("base_elasticity", 1.0)
+        self.elasticity_min = scenario_params.get("elasticity_min", 0.5)
+        self.elasticity_max = scenario_params.get("elasticity_max", 1.5)
+
+        
         # Load the country data
         self.raw_data = self.load_country_data()
         self.countries = self.initialize_countries()  # Use self since this method now belongs to the class
@@ -63,16 +76,6 @@ class Scenario():
         self.cdr_assumption = self.validate_assumption(scenario_params, "cdr_assumption", ["on", "off"])
 
 
-        # --- NEW ELASTICITY ASSUMPTIONS TO ADD ---
-        # 1. Validates which elasticity logic to use (defaults to 'off' if you forget to include it in older scenario setups)
-        self.emission_elasticity_assumption = scenario_params.get("emission_elasticity_assumption", "off")
-        if self.emission_elasticity_assumption not in ["off", "constant", "income_dependent"]:
-            raise ValueError("emission_elasticity_assumption must be one of ['off', 'constant', 'income_dependent']")
-            
-        # 2. Extracts the numerical parameters (with safe fallbacks)
-        self.base_elasticity = scenario_params.get("base_elasticity", 1.0)
-        self.elasticity_min = scenario_params.get("elasticity_min", 0.5)
-        self.elasticity_max = scenario_params.get("elasticity_max", 1.5)
         
         # Initialize global outcomes storage
         self.gini_data = {"years": [], "population": [], "income": []}

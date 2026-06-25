@@ -33,40 +33,57 @@ class Country():
         """
 
         def __init__(self, scenario, **kwargs):
-
                 """
                 Parameters:
                         The parameters here are given as attributes and are specified in the class doc.
                 """
+                # =========================================================
+                # 1. CORE ATTRIBUTES & STATE VARIABLES
+                # =========================================================
                 self.scenario = scenario
                 self.year = 2022  # All countries are initialized with 2022 data
-                self.cagr_by_decile = {}  # Necessary for convergence growth rates in scenario method
-                self.cagr_average = None # Necessary for AVERAGE country convergence growth rate in scenario method (so for the country as a whole it is not literally the average of decile growth rates)
-                self.pop_growth_rate = None # Necessary for population growth rate in case the assumption needs to dynamically change this for instane in the semi_log_model case of population growth
-                self.carbon_budget_per_current_year = None # Necessary for the carbon budget of the country in the current year
+                
+                self.cagr_by_decile = {}      # Necessary for convergence growth rates
+                self.cagr_average = None      # Necessary for average country convergence growth rate
+                self.pop_growth_rate = None   # Dynamically changes based on population assumptions
+                
+                self.carbon_budget_per_current_year = None
+                self.diff_budget_and_emissions = None
+                self.diff_budget_and_emissions_ratio = None
 
-                # Initialize dictionaries for the country's trajectories which is necessary data to be collected for plotting.
-                self.income_hh_trajectory = {}  # Necessary for plotting the trajectory of the countrys
-                self.gdppc_trajectory = {}  # Necessary for plotting the trajectory of the countrys
-                self.gdp_trajectory = {}  # Necessary for plotting the trajectory of the countrys
-                self.decile_trajectories = {}  # Necessary for plotting the trajectory of the countrys deciles here each dictionary entry is another dictionary with the years as keys and the decile incomes as values
-                self.population_trajectory = {}  # Necessary for plotting the trajectory of the countrys population
-                self.carbon_intensity_trajectory = {}  # This is the (future) historical trajectory of the carbon intensity of the country
-                self.emissions_trajectory = {}  # This is the (future) historical trajectory of the emissions of the country
-                self.carbon_emissions_pc_trajectory = {}  # This is the (future) historical trajectory of the carbon emissions per capita of the country        
-                self.gini_coefficient_trajectory = {}  # This is the (future) historical trajectory of the gini coefficient of the country
+                # =========================================================
+                # 2. TRAJECTORY DICTIONARIES (DATA LOGGING)
+                # =========================================================
+                # Macro-economic & demographic trajectories
+                self.income_hh_trajectory = {}
+                self.gdppc_trajectory = {}
+                self.gdp_trajectory = {}
+                self.population_trajectory = {}
+                self.gini_coefficient_trajectory = {}
+                
+                # Emissions & carbon intensity trajectories
+                self.carbon_intensity_trajectory = {}
+                self.emissions_trajectory = {}
+                self.carbon_emissions_pc_trajectory = {}
+                
+                # Decile-specific trajectories
+                self.decile_trajectories = {}
+                self.decile_emissions_trajectories = {f'decile{d}': {} for d in range(1, 11)}
+                self.decile_emissions_trajectories_pc = {f'decile{d}': {} for d in range(1, 11)}
 
-                # Dictionary mapping kwargs names to class attribute names
+                # =========================================================
+                # 3. KWARGS MAPPING & DYNAMIC ATTRIBUTE ASSIGNMENT
+                # =========================================================
                 attribute_mapping = {
                         'index': 'id',
                         'region_name': 'region',
                         'region_code': 'region_code',
                         'country_code': 'code',
-                        'mean': 'hh_mean', # this per year and per capita
-                        'gdp_pc_ppp_2017': 'gdp_pc', # this per year and per capita
+                        'mean': 'hh_mean',
+                        'gdp_pc_ppp_2017': 'gdp_pc',
                         'gini': 'gini_hh',
-                        'carbon_intensity': 'carbon_intensity', # this is the intensity of carbon per $ of income in 2022 (2021 and 2022 already modelled on trend)
-                        'carbon_intensity_trend': 'carbon_intensity_trend', # This is the trend in carbon intensity 2010 - 2020
+                        'carbon_intensity': 'carbon_intensity',
+                        'carbon_intensity_trend': 'carbon_intensity_trend',
                         'decile1_abs': 'decile1_abs',
                         'decile2_abs': 'decile2_abs',
                         'decile3_abs': 'decile3_abs',
@@ -81,7 +98,7 @@ class Country():
                         'population': 'population',
                         'total_emissions': 'total_emissions',
                         'growth_trend_2012_to_2022': 'gdp_pc_historical_growth'
-                        }
+                }
 
                 # Set attributes based on attribute mapping above
                 for kwarg_attr, class_attr in attribute_mapping.items():
@@ -95,60 +112,71 @@ class Country():
                         if key not in attribute_mapping:
                                 setattr(self, f'country_{key}', value)
 
-
-                # set 2022 values of trajectory dictionaries with the initial values
-                self.income_hh_trajectory[self.year] = self.hh_mean*365 # this is the mean household cons.income
-                self.gdppc_trajectory[self.year] = self.gdp_pc # this is the mean gross domestic product per capita
-                self.population_trajectory[self.year] = self.population # this is the population
-                self.carbon_intensity_trajectory[self.year] = self.carbon_intensity # this is the carbon intensity of the country
+                # =========================================================
+                # 4. PRE-CALCULATION SETUP & ELASTICITY INITIALIZATION
+                # =========================================================
+                # Set initial 2022 values before calculations
+                self.income_hh_trajectory[self.year] = self.hh_mean * 365 
+                self.gdppc_trajectory[self.year] = self.gdp_pc 
+                self.population_trajectory[self.year] = self.population 
+                self.carbon_intensity_trajectory[self.year] = self.carbon_intensity 
                 
-                # -- ELASTICITY INITIALIZATION ADDITIONS --
+                # Elasticity attributes initialization
                 self.base_carbon_intensity = self.carbon_intensity
                 self.decile_carbon_intensities = {}
                 self.base_A = None
                 
+                # =========================================================
+                # 5. BASELINE PIPELINE (CALCULATE & LOG 2022 STATE)
+                # =========================================================
                 # Execute emission calculation for 2022 to populate baseline values
                 self.update_emissions()
                 
-                # Set initial trajectories based on the dynamically calculated total_emissions
+                # Set initial macro trajectories based on the dynamically calculated emissions
                 self.emissions_trajectory[self.year] = self.total_emissions
                 self.carbon_emissions_pc_trajectory[self.year] = self.total_emissions / self.population if self.population > 0 else 0
 
-                # set more variables necessary to compute the country carbon budget consistent behaviour
-                self.diff_budget_and_emissions = None
-                self.diff_budget_and_emissions_ratio = None
+                # Immediately log the baseline 2022 year into all remaining trajectory dictionaries
+                self.save_current_state()
+
 
         def save_current_state(self):
-
                 """
                 Description: 
-                        A method saving the current state of the country across all kinds of variables. This is necessary for plotting the trajectory of the country's income and gdp per capita.
-                
-                Parameters:
-                        None
-
+                        A method saving the current state of the country across all kinds of variables. 
+                        This is necessary for plotting the trajectories of the country's income, gdp, and emissions.
                 """
-                #### ECONOMIC VARIABLES ####
-                # add current year and current income to the income trajectory
-                # if the year is 2022 then the income is the mean household income times 365 to get the annual income otherwise it is annual already
-                 # if self.year == 2022:
-                    #      self.income_hh_trajectory[self.year] = self.hh_mean*365 # this is the mean household cons.income
-                 # else: # otherwise it is annual already
+                #### ECONOMIC & DEMOGRAPHIC VARIABLES ####
                 self.income_hh_trajectory[self.year] = self.hh_mean
+                self.gdppc_trajectory[self.year] = self.gdp_pc
+                self.gdp_trajectory[self.year] = self.gdp_pc * self.population
+                self.population_trajectory[self.year] = self.population
+                self.gini_coefficient_trajectory[self.year] = self.gini_hh 
                 
-                self.gdppc_trajectory[self.year] = self.gdp_pc # this is the mean gross domestic product per capita
-                self.gdp_trajectory[self.year] = self.gdp_pc * self.population # this is the gross domestic product of the country
-                self.population_trajectory[self.year] = self.population # this is the population
-                self.carbon_intensity_trajectory[self.year] = self.carbon_intensity # this is the carbon intensity of the country
+                #### MACRO EMISSION VARIABLES ####
+                self.carbon_intensity_trajectory[self.year] = self.carbon_intensity 
                 self.emissions_trajectory[self.year] = self.total_emissions
-                self.carbon_emissions_pc_trajectory[self.year] = self.total_emissions / self.population if self.population > 0 else 0 # this is the carbon emissions per capita of the country in tonnes
-                self.gini_coefficient_trajectory[self.year] = self.gini_hh # this is the gini coefficient of the country
-                # add and save current decile incomes to the decile trajectories where every decile in the dictionary is another dictionary with the years as keys and the decile incomes as values
+                self.carbon_emissions_pc_trajectory[self.year] = self.total_emissions / self.population if self.population > 0 else 0
+                
+                #### DECILE TRAJECTORIES ####
                 for decile_num in range(1, 11):
-                        decile_income = getattr(self, f'decile{decile_num}_abs')
+                        # Ensure nested dictionaries exist
                         if f'decile{decile_num}' not in self.decile_trajectories:
                                 self.decile_trajectories[f'decile{decile_num}'] = {}
-                        self.decile_trajectories[f'decile{decile_num}'][self.year] = decile_income
+                        if f'decile{decile_num}' not in self.decile_emissions_trajectories:
+                                self.decile_emissions_trajectories[f'decile{decile_num}'] = {}
+                        if f'decile{decile_num}' not in self.decile_emissions_trajectories_pc:
+                                self.decile_emissions_trajectories_pc[f'decile{decile_num}'] = {}
+
+                        # 1. Save decile incomes
+                        self.decile_trajectories[f'decile{decile_num}'][self.year] = getattr(self, f'decile{decile_num}_abs')
+                        
+                        # 2. Save decile absolute emissions
+                        self.decile_emissions_trajectories[f'decile{decile_num}'][self.year] = getattr(self, f'decile{decile_num}_emissions') 
+                        
+                        # 3. Save decile per capita emissions (This fixes your plotting issue!)
+                        self.decile_emissions_trajectories_pc[f'decile{decile_num}'][self.year] = getattr(self, f'decile{decile_num}_emissions_pc')
+
 
         def technological_change(self):
 
@@ -190,7 +218,7 @@ class Country():
                 #################################################
                 #if self.scenario.tech_evolution_assumption == "plausible":
                 # for the first ten years assume the ongoing trend in carbon intensity from 2010 to 2020
-                if self.year < 2025:
+                if self.year < 2021:
                         self.carbon_intensity = self.carbon_intensity * (1 + self.carbon_intensity_trend)
                 # after that assume a constant the logarithmic model empirically determined via cross country data gdppc 2022 vs trend 2010 2020
                 # which is this equation y = -0.015ln(x) + 0.1309 where x is the gdp per capita in 2022 and y is the trend in carbon intensity from 2010 to 2020
@@ -234,7 +262,7 @@ class Country():
                                         #self.carbon_intensity = self.carbon_intensity * (1 + self.scenario.final_improvement_rate) # CAREFUL RATE GIVEN IS NEGATIVE so + operator leads to multiplier < 1
                                         # IMPORTANT we now weaken this assumption and just keep the carbon intensity constant in the case of degrowth because it is not clear that planned degrowth economies would also revert socio-cultural norms to lower technological progress and innovation rates, so we assume preservation of the technology
                                         # print this is country and this is the cagr average and this is the carbon intensity
-                                        print(f"This is country {self.code}, this is the CAGR average: {self.cagr_average}, and this is the carbon intensity: {self.carbon_intensity}")
+                                         #print(f"This is country {self.code}, this is the CAGR average: {self.cagr_average}, and this is the carbon intensity: {self.carbon_intensity}")
                                         self.carbon_intensity = self.carbon_intensity # do nothing
 
                         elif self.scenario.tech_hysteresis_assumption == "off":
@@ -274,7 +302,8 @@ class Country():
                            #     self.carbon_intensity = (self.total_emissions * (1/self.diff_budget_and_emissions_ratio)) / (self.gdp_pc * self.population) * 1000 # this is the emissions of the country, multiplied by 1000 to get to kg co2 per $ from metric tons co2 per $
                         
 
-                
+
+
         def update_emissions(self):
                 """
                 Description: 
@@ -283,25 +312,55 @@ class Country():
                 """
                 assumption = getattr(self.scenario, 'emission_elasticity_assumption', 'off')
                 
+                # Re-initialize cross-sectional distribution array for the current year
+                self.decile_emissions_pc_dist = []
+                pop_d = self.population / 10 # population per decile
+                macro_gdp = self.gdp_pc * self.population
+                
+                # BUG FIX: Calculate true mean directly from the deciles. 
+                # This guarantees yd and mean_income are always in identical units (Annual), 
+                # preventing the 365x multiplier bug in the base year 2022.
+                decile_incomes = [getattr(self, f'decile{d}_abs') for d in range(1, 11)]
+                mean_income = sum(decile_incomes) / 10.0 if sum(decile_incomes) > 0 else 1.0
+                
+                total_scaled_emissions = 0
+                
                 if assumption == "off":
                         self.total_emissions = self.carbon_intensity * self.gdp_pc * self.population / 1000 
-                else:
-                        # 1. Update the decile-specific carbon intensities based on tech & elasticity
+                        
+                        for d in range(1, 11):
+                                yd = getattr(self, f'decile{d}_abs')
+                                gdp_d = macro_gdp * (yd / (10 * mean_income))
+                                emissions_d = (self.carbon_intensity * gdp_d) / 1000
+                                emissions_d_pc = emissions_d / pop_d if pop_d > 0 else 0
+                                
+                                # 1. Keep snapshot distribution
+                                self.decile_emissions_pc_dist.append(emissions_d_pc)
+                                
+                                # 2. Set object attributes so save_current_state can find them
+                                setattr(self, f'decile{d}_emissions', emissions_d)
+                                setattr(self, f'decile{d}_emissions_pc', emissions_d_pc)
+                                
+                elif assumption in ["constant", "income_dependent"]:
+                        # Both modes rely on decile-specific carbon intensities
                         self.update_decile_carbon_intensities()
                         
-                        total_scaled_emissions = 0
-                        mean_income = self.hh_mean if self.hh_mean > 0 else 1.0
-                        macro_gdp = self.gdp_pc * self.population
-                        
-                        # 2. Sum up decile emissions using their specific carbon intensity
                         for d in range(1, 11):
                                 yd = getattr(self, f'decile{d}_abs')
                                 ci_d = self.decile_carbon_intensities[f'decile{d}']
                                 
-                                # Decile's share of GDP is proportional to its share of income
                                 gdp_d = macro_gdp * (yd / (10 * mean_income))
+                                emissions_d = (ci_d * gdp_d) / 1000
+                                emissions_d_pc = emissions_d / pop_d if pop_d > 0 else 0
                                 
-                                total_scaled_emissions += (ci_d * gdp_d) / 1000
+                                # 1. Keep snapshot distribution
+                                self.decile_emissions_pc_dist.append(emissions_d_pc)
+                                
+                                # 2. Set object attributes so save_current_state can find them
+                                setattr(self, f'decile{d}_emissions', emissions_d)
+                                setattr(self, f'decile{d}_emissions_pc', emissions_d_pc)
+                                
+                                total_scaled_emissions += emissions_d
                                 
                         self.total_emissions = total_scaled_emissions
 
@@ -607,6 +666,15 @@ class Country():
                         self.gini_hh = numerator / denominator
 
         def get_current_elasticity(self):
+
+                """
+                Description: 
+                        A method computing the current elasticity of emissions with respect to income based on the scenario assumption.
+                Parameters:
+                        None
+
+                """
+
                 assumption = getattr(self.scenario, 'emission_elasticity_assumption', 'off')
                 
                 if assumption == "constant":
@@ -628,14 +696,14 @@ class Country():
 
         def update_decile_carbon_intensities(self):
                 """
-                Splits the macro carbon intensity into heterogeneous decile intensities.
-                In 2022, it calibrates a baseline scalar 'A' to perfectly match macro emissions.
-                In future years, 'A' scales with macro technological change, while the 
-                distribution naturally shifts based on current elasticity and inequality.
+                Description:
+                        Splits the macro carbon intensity into heterogeneous decile intensities via the elasticity of emissions with respect to income.
                 """
                 epsilon = self.get_current_elasticity()
                 decile_incomes = [getattr(self, f'decile{d}_abs') for d in range(1, 11)]
-                mean_income = self.hh_mean if self.hh_mean > 0 else 1.0
+                
+                # BUG FIX: Calculate true mean directly from deciles to avoid daily vs annual unit mismatch
+                mean_income = sum(decile_incomes) / 10.0 if sum(decile_incomes) > 0 else 1.0
                 
                 # Calculate the denominator for the normalization factor
                 sum_ratios_eps = sum((yd / mean_income) ** epsilon for yd in decile_incomes)
@@ -643,7 +711,7 @@ class Country():
                 if self.year == 2022:
                         # Calibrate base_A so sum of decile emissions exactly equals macro emissions in 2022
                         self.base_A = (10 * self.carbon_intensity) / sum_ratios_eps if sum_ratios_eps > 0 else self.carbon_intensity
-                
+
                 # Scale current A by how much macro carbon_intensity has improved since 2022
                 current_A = self.base_A * (self.carbon_intensity / self.base_carbon_intensity)
                 
@@ -651,9 +719,10 @@ class Country():
                 for i, yd in enumerate(decile_incomes):
                         d = i + 1
                         ratio = yd / mean_income
-                        # CI_d = A * ratio^(epsilon - 1). Fallback to 0 if income is 0 to avoid ZeroDivisionError
                         ci_d = current_A * (ratio ** (epsilon - 1)) if ratio > 0 else 0
                         self.decile_carbon_intensities[f'decile{d}'] = ci_d
+
+                        
 
         def __repr__(self): # This is the string representation of the object
                 # Retrieve the dynamic attributes by removing the 'country_' prefix and format them.

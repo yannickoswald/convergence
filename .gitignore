@@ -202,3 +202,4 @@ toy_model_elasticity_to_carbon_intensity.ipynb
 global_tech_rate_sweeping.ipynb
 run_figure5_old.ipynb
 
+*.parquet
