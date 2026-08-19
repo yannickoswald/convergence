@@ -436,8 +436,7 @@ class Plots():
         #return ax
 
 
-    def plot_growth_rates_vs_reality(self, ax = None):
-
+    def plot_growth_rates_vs_reality(self, ax=None):
         """
         Description: 
             A method that plots the distribution of necessary average economic growth rates per country to achieve the income_goal
@@ -447,13 +446,17 @@ class Plots():
         """
 
         try:
-            # Get the directory of the current script
+            # 1. Get the directory of the current script (the 'model_code' folder)
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            file_path = os.path.join(script_dir, 'data', 'pip_all_data', 'gdp_pc_empirical_trend.csv')
+            
+            # 2. Navigate up to the root, then into the 'data' folder
+            file_path = os.path.abspath(os.path.join(script_dir, '..', 'data', 'pip_all_data', 'gdp_pc_empirical_trend.csv'))
+            
             data_empirical = pd.read_csv(file_path, sep=";", encoding='unicode_escape')
             #print(data_empirical)
         except FileNotFoundError:
-            print("File not found. Please ensure the file path is correct.")
+            # Print the exact file path for easier debugging
+            print(f"File not found. Attempted to read from:\n{file_path}")
             return  # Exit the function if file is not found
         except Exception as e:
             print(f"An error occurred: {e}")

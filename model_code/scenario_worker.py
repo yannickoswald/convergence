@@ -9,7 +9,7 @@ base_scenario_params = {
     "gdp_assumption": "constant_ratio",
     "pop_growth_assumption": "semi_log_model",
     "tech_evolution_assumption": "plausible",
-    "tech_hysteresis_assumption": "pessimistic_degrowth",
+    "tech_hysteresis_assumption": "off",
     "steady_state_high_income_assumption": "off",
     "k": 0.05,
     "t0": 2060,
@@ -23,11 +23,14 @@ def run_single_scenario_with_deciles(param_tuple):
     """
     Runs a single iteration of the scenario and returns the extracted trajectory rows.
     """
-    inc, cdr, fir, elast = param_tuple
+    # 1. FIX: Unpack all 5 variables here
+    inc, cdr, degrowth, fir, elast = param_tuple
 
     params = copy.deepcopy(base_scenario_params)
     params["income_goal"] = inc
     params["cdr_assumption"] = cdr
+    # 2. FIX: Assign the new degrowth variable to the correct parameter
+    params["tech_hysteresis_assumption"] = degrowth 
     params["final_improvement_rate"] = fir
     params["base_elasticity"] = elast
 
@@ -57,6 +60,7 @@ def run_single_scenario_with_deciles(param_tuple):
                 row = {
                     "Income_Goal": inc,
                     "CDR_Assumption": cdr,
+                    "Degrowth_Assumption": degrowth, # 3. FIX: Add it to your output rows too!
                     "Final_Improvement_Rate": fir,
                     "Elasticity": elast,
                     "Country": country_name,

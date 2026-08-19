@@ -266,7 +266,6 @@ class Country():
                                         self.carbon_intensity = self.carbon_intensity # do nothing
 
                         elif self.scenario.tech_hysteresis_assumption == "off":
-
                         
                                 # # #  all countries are treated according to the same mechanics regardless of income trajectory 
    
@@ -308,9 +307,24 @@ class Country():
                 """
                 Description: 
                         A method computing the emissions of the country by summing the 
-                        heterogeneous emissions of each decile based on elasticity.
+                        heterogeneous emissions of each decile based on elasticity or if a unitary elasticity is assumed, then 
+                        based on the average carbon intensity.
                 """
-                assumption = getattr(self.scenario, 'emission_elasticity_assumption', 'off')
+                assumption = getattr(self.scenario, 'elasticity_assumption', 'off')
+
+
+                # --- ADD ASSERT STATEMENTS HERE ---
+                # 1. Check that the assumption path is strictly one of your allowed interface values
+                valid_assumptions = ["off", "constant", "income_dependent"]
+                assert assumption in valid_assumptions, f"Path Error: Unrecognized elasticity assumption '{assumption}'."
+
+                # 2. Check that the scenario object is properly attached and holding the interface parameters
+                assert hasattr(self.scenario, 'income_goal'), "Path Error: 'income_goal' parameter did not pass from the interface to the scenario."
+                
+                # 3. (Optional) Check that elasticity_value is present if the assumption is active
+                if assumption != "off":
+                        assert hasattr(self.scenario, 'elasticity_value'), "Path Error: 'elasticity_value' missing but assumption is turned on."
+                # ----------------------------------
                 
                 # Re-initialize cross-sectional distribution array for the current year
                 self.decile_emissions_pc_dist = []
@@ -675,10 +689,10 @@ class Country():
 
                 """
 
-                assumption = getattr(self.scenario, 'emission_elasticity_assumption', 'off')
+                assumption = getattr(self.scenario, 'elasticity_assumption', 'off')
                 
                 if assumption == "constant":
-                        return getattr(self.scenario, 'base_elasticity', 1.0)
+                        return getattr(self.scenario, 'elasticity_value', 1.0)
                 elif assumption == "income_dependent":
                         # Get bounds from scenario or use defaults
                         e_min = getattr(self.scenario, 'elasticity_min', 0.5)

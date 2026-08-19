@@ -60,7 +60,7 @@ class ScenarioSweeper:
                        tech_evolution_assumption_values, tech_hysteresis_assumption_values,
                        steady_state_high_income_assumption_values, sigmoid_parameters_values,
                        final_improvement_rate, population_hysteresis_assumption_values,
-                       run_until_2100, cdr_assumption, cdr_level_2100):
+                       run_until_2100, cdr_assumption, cdr_level_2100, elasticity_assumption_values, elasticity_value):
 
         # Store the parameter values to be swept through
         self.end_year_values = end_year_values
@@ -77,7 +77,9 @@ class ScenarioSweeper:
         self.run_until_2100 = run_until_2100 
         self.cdr_assumption = cdr_assumption 
         self.cdr_level_2100 = cdr_level_2100 
-        
+        self.elasticity_assumption_values = elasticity_assumption_values
+        self.elasticity_value = elasticity_value
+
         # Output dictionaries
         self.total_emissions = {}
         self.growth_rate_global = {}
@@ -105,7 +107,9 @@ class ScenarioSweeper:
         cdr_level_2100 = self.cdr_level_2100  
         sigmoid_parameters = self.sigmoid_parameters_values  
         final_improvement_rate = self.final_improvement_rate  
-        
+        elasticity_assumption = self.elasticity_assumption_values[0]
+        elasticity_value = self.elasticity_value[0]
+
         tasks = []
         
         # Build task list
@@ -130,7 +134,9 @@ class ScenarioSweeper:
                                 "population_hysteresis_assumption": population_hysteresis_assumption,
                                 "run_until_2100": run_until_2100[0], 
                                 "cdr_assumption": cdr_assumption[0], 
-                                "cdr_level_2100": cdr_level 
+                                "cdr_level_2100": cdr_level,
+                                "elasticity_assumption": elasticity_assumption, # Options: "off", "constant", "income_dependent"
+                                "elasticity_value": elasticity_value     
                             }
                             tasks.append(scenario_params)
 

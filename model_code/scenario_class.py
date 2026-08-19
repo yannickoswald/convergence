@@ -49,12 +49,12 @@ class Scenario():
 
            # --- NEW ELASTICITY ASSUMPTIONS TO ADD ---
         # 1. Validates which elasticity logic to use (defaults to 'off' if you forget to include it in older scenario setups)
-        self.emission_elasticity_assumption = scenario_params.get("emission_elasticity_assumption", "off")
-        if self.emission_elasticity_assumption not in ["off", "constant", "income_dependent"]:
-            raise ValueError("emission_elasticity_assumption must be one of ['off', 'constant', 'income_dependent']")
+        self.elasticity_assumption = scenario_params.get("elasticity_assumption", "off")
+        if self.elasticity_assumption not in ["off", "constant", "income_dependent"]:
+            raise ValueError("elasticity_assumption must be one of ['off', 'constant', 'income_dependent']")
             
         # 2. Extracts the numerical parameters (with safe fallbacks)
-        self.base_elasticity = scenario_params.get("base_elasticity", 1.0)
+        self.elasticity_value = scenario_params.get("elasticity_value", 1.0)
         self.elasticity_min = scenario_params.get("elasticity_min", 0.5)
         self.elasticity_max = scenario_params.get("elasticity_max", 1.5)
 
@@ -74,9 +74,9 @@ class Scenario():
         self.steady_state_high_income_assumption = self.validate_assumption(scenario_params, "steady_state_high_income_assumption", ["on", "off", "on_with_growth"])
         self.population_hysteresis_assumption = self.validate_assumption(scenario_params, "population_hysteresis_assumption", ["on", "off"])
         self.cdr_assumption = self.validate_assumption(scenario_params, "cdr_assumption", ["on", "off"])
+        self.elasticity_assumption = self.validate_assumption(scenario_params, "elasticity_assumption", ["off", "constant", "income_dependent"])
 
 
-        
         # Initialize global outcomes storage
         self.gini_data = {"years": [], "population": [], "income": []}
 
@@ -113,13 +113,22 @@ class Scenario():
                 None
         """
         try:
-            file_path = os.path.join('data', 'pip_all_data', 'data_nowcasted_extended.csv')
+            # 1. Get the directory of the current file (the 'model_code' folder)
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            
+            # 2. Navigate up to the root, then into the 'data' folder
+            file_path = os.path.abspath(os.path.join(current_dir, '..', 'data', 'pip_all_data', 'data_nowcasted_extended.csv'))
+            
+            # Read the CSV
             data = pd.read_csv(file_path, encoding='unicode_escape')
             return data
+            
         except FileNotFoundError:
-            print("File not found. Please ensure the file path is correct.")
+            # It is helpful to print the exact file_path it tried to look for when debugging!
+            print(f"File not found. Attempted to read from:\n{file_path}")
         except Exception as e:
             print(f"An error occurred: {e}")
+
     
     @staticmethod
     def load_population_growth_rates():
@@ -129,16 +138,21 @@ class Scenario():
         Parameters:
                 None
         """
-
         try:
-            file_path = os.path.join('data', 'pip_all_data', 'population_growth_rates.csv')
+            # 1. Get the directory of the current file (the 'model_code' folder)
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            
+            # 2. Navigate up to the root, then into the 'data' folder
+            file_path = os.path.abspath(os.path.join(current_dir, '..', 'data', 'pip_all_data', 'population_growth_rates.csv'))
+            
             data = pd.read_csv(file_path, sep=",", encoding='unicode_escape')
             data.set_index('code', inplace=True)
             # replace 0 values with very small value to avoid division by zero
             data = data.replace(0, 1e-9)          
             return data
         except FileNotFoundError:
-            print("File not found. Please ensure the file path is correct.")
+            # Print the exact file path for easier debugging
+            print(f"File not found. Attempted to read from:\n{file_path}")
         except KeyError:
             print("Error setting index: 'code' column not found.")
         except Exception as e:
@@ -379,31 +393,39 @@ class Scenario():
         self.compute_average_growth_rates() # compute the average growth rates for each country
 
 
-    def sum_cumulative_emissions(self):
-        
-        """
-        Description: 
-                Sum the cumulative emissions for all countries over time in a given scenario
-        Parameters:
-                None
-        """
+    def sum_cumulative_emissions(self, accounting_start_year=2022):
+                
+                """
+                Description: 
+                        Sum the cumulative emissions for all countries over time in a given scenario. 
+                        Which matters for exact numerics related to carbon budget shares used.
+                        By default, it starts counting from 2023 to match your updated baseline pipeline.
+                        To reproduce older results where 2022 was included, simply pass 
+                        accounting_start_year=2022 when calling this method, or change the default here.
+                Parameters:
+                        accounting_start_year - The year to start summing emissions from.
+                """
 
-        cumulative_emissions = 0
-        for country in self.countries.values():
-                # sum the emissions trajectory for each country and add to cumulative emissions
-                cumulative_emissions += sum(country.emissions_trajectory.values())
+                cumulative_emissions = 0
+                for country in self.countries.values():
+                        # Flexibly sum emissions starting from the designated year
+                        emissions_from_start = sum(
+                            emission for year, emission in country.emissions_trajectory.items() if year >= accounting_start_year
+                        )
+                        cumulative_emissions += emissions_from_start
 
-        # 
-        print("this is the cumulative emissions  before cdr adjustment", cumulative_emissions)
-        
+                print(f"this is the cumulative emissions before cdr adjustment (from {accounting_start_year})", cumulative_emissions)
+                
 
-        # if cdr is on, subtract the cdr trajectory from the cumulative emissions
-        if self.cdr_assumption == "on":
-                for year, cdr_value in self.cdr_global_level_trajectory.items():
-                        cumulative_emissions -= cdr_value * 1e9 # convert to kgs from gigatons
+                # if cdr is on, subtract the cdr trajectory from the cumulative emissions
+                if self.cdr_assumption == "on":
+                        for year, cdr_value in self.cdr_global_level_trajectory.items():
+                                # Only apply CDR for the years we are accounting for
+                                if year >= accounting_start_year:
+                                        cumulative_emissions -= cdr_value * 1e9 # convert to kgs from gigatons
 
-        print("this is the cumulative emissions  after cdr adjustment", cumulative_emissions)
-        return cumulative_emissions
+                print(f"this is the cumulative emissions after cdr adjustment (from {accounting_start_year})", cumulative_emissions)
+                return cumulative_emissions
     
     
     def compute_current_global_population(self):
