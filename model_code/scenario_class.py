@@ -41,7 +41,7 @@ class Scenario():
         self.income_goal = scenario_params["income_goal"]
         self.carbon_budget = scenario_params["carbon_budget"]
         #self.hysteresis_tech_progress = scenario_params["hysteresis_tech_progress"]
-        self.k = scenario_params["k"]
+        self.kappa = scenario_params["kappa"]
         self.t0 = scenario_params["t0"]
         self.final_improvement_rate = scenario_params["final_improvement_rate"]
 

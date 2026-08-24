@@ -128,7 +128,7 @@ class ScenarioSweeper:
                                 "tech_evolution_assumption": tech_evolution_assumption,
                                 "tech_hysteresis_assumption": tech_hysteresis_assumption,
                                 "steady_state_high_income_assumption": steady_state_high_income_assumption,
-                                "k": sigmoid_parameters[0],
+                                "kappa": sigmoid_parameters[0],
                                 "t0": sigmoid_parameters[1],
                                 "final_improvement_rate": carbon_intensity_rate,
                                 "population_hysteresis_assumption": population_hysteresis_assumption,
@@ -307,7 +307,7 @@ class ScenarioSweeper:
             pass
 
         ax.scatter(2060, 10000, s=100, c='blue', marker='o', zorder = 5, label='Costa Rica')
-        ax.annotate("Costa Rica\n2060\nscenario", (2060, 10000), textcoords="offset points", xytext=(30,30), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
+        ax.annotate("Costa Rica\n2060\nscenario", (2060, 10000), textcoords="offset points", xytext=(20,45), ha='center', arrowprops=dict(arrowstyle="-", connectionstyle="arc3,rad=0"), color='white')
 
         try:
             x_pos = x_values.index(2060)

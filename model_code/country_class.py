@@ -190,18 +190,18 @@ class Country():
                 """
                 # Define subprocedures for the sigmoidal function and the weighted average to compute a model of technological change
 
-                def sigmoid(t, k=0.1, t0=50):
+                def sigmoid(t, kappa=0.1, t0=50):
                         """
                         Sigmoid function for calculating the weight w(t).
                         
                         Parameters:
                         - t: The time variable.
-                        - k: Steepness of the curve.
+                        - kappa: Steepness of the curve.
                         - t0: Midpoint of the sigmoid, where w(t) = 0.5.
                         """
-                        return 1 / (1 + np.exp(-k * (t - t0)))
+                        return 1 / (1 + np.exp(-kappa * (t - t0)))
 
-                def weighted_average(t, y, z, k=0.1, t0=50):
+                def weighted_average(t, y, z, kappa=0.1, t0=50):
                         """
                         Calculates the weighted average of y and z over time using a sigmoidal function for weights.
                         
@@ -211,7 +211,7 @@ class Country():
                         - z: The z variable.
                         - k, t0: Parameters for the sigmoid function.
                         """
-                        w = sigmoid(t, k, t0)
+                        w = sigmoid(t, kappa, t0)
                         return (1 - w) * y + w * z
 
                 # DIFFERENTIATE TECHNOLOGICAL CHANGE ASSUMPTIONS
@@ -225,7 +225,7 @@ class Country():
                         if self.scenario.tech_hysteresis_assumption == "optimistic_degrowth":
                                 if self.cagr_average > 0:
                                         modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
-                                        improvement_rate = weighted_average(self.year, modelled_trend, self.scenario.final_improvement_rate, k=self.scenario.k, t0=self.scenario.t0)
+                                        improvement_rate = weighted_average(self.year, modelled_trend, self.scenario.final_improvement_rate, kappa=self.scenario.kappa, t0=self.scenario.t0)
                                 else:
                                         improvement_rate = self.scenario.final_improvement_rate 
 
@@ -240,7 +240,7 @@ class Country():
                         elif self.scenario.tech_hysteresis_assumption == "pessimistic_degrowth":
                                 ### just countries evolve according to the semi log model of technological change, so path dependency is not considered, but the semi log model is applied to all countries, so the technological change rate is always the same for all countries and only depends on the gdp per capita of the country
                                 modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
-                                improvement_rate = weighted_average(self.year, modelled_trend, self.scenario.final_improvement_rate, k=self.scenario.k, t0=self.scenario.t0)
+                                improvement_rate = weighted_average(self.year, modelled_trend, self.scenario.final_improvement_rate, kappa=self.scenario.kappa, t0=self.scenario.t0)
                 
                 # 2. Apply the rate to the country's macro carbon intensity
                 self.carbon_intensity = self.carbon_intensity * (1 + improvement_rate)
@@ -556,30 +556,33 @@ class Country():
                         if self.scenario.population_hysteresis_assumption == "on":
 
                                 if self.cagr_average > 0:
-                                        self.pop_growth_rate = 0.0874 - 0.0190*np.log10(self.gdp_pc)
+                                        self.pop_growth_rate = 0.088 - 0.020*np.log10(self.gdp_pc) ## new population weighted regression
                                         new_population = self.population * (1 + self.pop_growth_rate)
                                         self.population = new_population
                                 else:
-                                        # if degrowing from 2023 onwards keep population growth as it has been in 2022, that is, preservation of socio-cultural norms
-                                        self.pop_growth_rate = 0.0874 - 0.0190*np.log10(self.gdppc_trajectory[2022])
-                                        new_population = self.population * (1 + self.pop_growth_rate)
-                                        self.population = new_population
+                                        # if degrowing from 2023 onwards assume UN_medium as well for "decoupling" countries, because it is not clear that planned degrowth economies revert socio-cultural norms to higher fertility rates
+                                        self.pop_growth_rate = self.scenario.population_growth_rates.loc[str(self.code)][str(self.year)]
+                                        if self.pop_growth_rate is not None:
+                                                new_population = self.population * (1 + self.pop_growth_rate)
+                                                self.population = new_population
+                                        else:
+                                                print("No growth rate found for", self.code, "in year", self.year)
 
                         elif self.scenario.population_hysteresis_assumption == "off":
 
-                                self.pop_growth_rate = 0.0874 - 0.0190*np.log10(self.gdp_pc)
+                                self.pop_growth_rate = 0.088 - 0.020*np.log10(self.gdp_pc)
                                 new_population = self.population * (1 + self.pop_growth_rate)
                                 self.population = new_population
 
                         
-                elif self.scenario.pop_growth_assumption == "semi_log_model_elasticity":
+                # elif self.scenario.pop_growth_assumption == "semi_log_model_elasticity":
                         # in this case we start from the empirical population growth rate in 2022 and then apply the semi log model equation for population growth change rate
-                        if self.year == 2022:
-                                self.pop_growth_rate = self.scenario.population_growth_rates.loc[str(self.code)][str(self.year)]
-                                if self.pop_growth_rate is not None:
-                                        new_population = self.population * (1 + self.pop_growth_rate)
-                                        self.population = new_population
-                        else:
+                       #  if self.year == 2022:
+                               #  self.pop_growth_rate = self.scenario.population_growth_rates.loc[str(self.code)][str(self.year)]
+                              #   if self.pop_growth_rate is not None:
+                                     #    new_population = self.population * (1 + self.pop_growth_rate)
+                                     #    self.population = new_population
+                       #  else:
                                 # for the future years apply the semi log model equation for population growth change rate y = 0.09 - 0.01*log(x) 
                                 # where x is gdp per capita and y is the population growth rate, so we must first calculate the derivative of y with respect to x
                                 # which is dy/dx = -0.01/x
@@ -589,16 +592,16 @@ class Country():
                                 # then we also assume hysteresis in this assumption, meaning we only apply this elasticity if the gdp per capita increases, if it decreases we do not change population growth rate
                                 # this means in our convergence scenario, for countries who apply deliberate degrowth, they do not actually get poorer in terms of living standards but only in gdp.
                                 # so there is no reason to assume their population growth rate would change upward in this case.
-                                if self.cagr_average > 0:
+                               #  if self.cagr_average > 0:
                                         # then we apply the elasticity as percentage change in population growth rate
-                                        elasticity = -0.01/self.pop_growth_rate
-                                        self.pop_growth_rate =  self.pop_growth_rate * (1 + elasticity) # that is the higher the gdp per capita the lower the population growth rate but
-                                else:
+                                #         elasticity = -0.01/self.pop_growth_rate
+                                     #    self.pop_growth_rate =  self.pop_growth_rate * (1 + elasticity) # that is the higher the gdp per capita the lower the population growth rate but
+                               #  else:
                                         # if the gdp per capita decreases we still apply the UN medium projections
-                                        self.pop_growth_rate = self.scenario.population_growth_rates.loc[str(self.code)][str(self.year)]
+                                 #        self.pop_growth_rate = self.scenario.population_growth_rates.loc[str(self.code)][str(self.year)]
 
-                                new_population = self.population * (1 + self.pop_growth_rate)
-                                self.population = new_population
+                              #   new_population = self.population * (1 + self.pop_growth_rate)
+                              #   self.population = new_population
                                 
         def calculate_current_carbon_budget(self):
 
