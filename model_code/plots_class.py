@@ -261,77 +261,52 @@ class Plots():
                 label (str): Label for the emissions trajectory line.
         """ 
 
-
          # Default values for optional parameters
         ax = kwargs.get('ax', None)
         color = kwargs.get('color', "tab:blue")
         label = kwargs.get('label', "Global Emissions")
 
-        # Create a new figure and axes if not provided
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 5))
         
-        # Initialize an empty dictionary to store the global emissions trajectory
         global_emissions_trajectory = {}
 
         # Iterate over all countries in the scenario
         for country in self.scenario.countries.values():
-            # Iterate over the years in the country's GDP per capita trajectory
-            for year, gdp_pc in country.gdppc_trajectory.items():
-                # Multiply the GDP per capita value with the country's population at the given year
-                gdp_total = gdp_pc * country.population_trajectory[year]
-
-                # Multiply the GDP total with the country's carbon intensity at the given year
-                emissions_total = gdp_total * country.carbon_intensity_trajectory[year]
-
-                # If the year is already in the global emissions trajectory dictionary, add the emissions value to the existing value
+            # USE THE PRE-CALCULATED ELASTICITY TRAJECTORY (Already in metric tonnes)
+            for year, emissions in country.emissions_trajectory.items():
                 if year in global_emissions_trajectory:
-                    global_emissions_trajectory[year] += emissions_total
-                # Otherwise, create a new entry in the global emissions trajectory dictionary with the emissions value
+                    global_emissions_trajectory[year] += emissions
                 else:
-                    global_emissions_trajectory[year] = emissions_total
+                    global_emissions_trajectory[year] = emissions
 
-        # Sort the global emissions trajectory by year
         sorted_years = sorted(global_emissions_trajectory.keys())
-        
-        #print("this is the emissions trajectory", sorted_emissions_trajectory)
  
-        # if self.scenario.cdr_assumption_on is True, then plot the cdr global level trajectory and add these values to the emission trajectory
+        # Apply CDR (converting CDR from Gigatonnes to Metric Tonnes using 1e9)
         if self.scenario.cdr_assumption == "on":
-            # Iterate over the years in the global emissions trajectory
             for year in sorted_years:
-                # If the year is in the CDR global level trajectory, subtract the CDR value from the emissions trajectory
                 if year in self.scenario.cdr_global_level_trajectory:
-                    global_emissions_trajectory[year] -= self.scenario.cdr_global_level_trajectory[year]*1e12 # convert from gigatonnes to kgs
-                    print("this after calculation emissions", global_emissions_trajectory[year])
-                    print("this the cdr global level trajectory multiplied", self.scenario.cdr_global_level_trajectory[year]*1e9)
+                    cdr_in_metric_tons = self.scenario.cdr_global_level_trajectory[year] * 1e9 
+                    global_emissions_trajectory[year] -= cdr_in_metric_tons
 
-        sorted_emissions_trajectory = [global_emissions_trajectory[year]/1000 for year in sorted_years] # convert to metric tons from kg
+        # Since we pulled directly in metric tonnes, we don't need to divide by 1000 anymore
+        sorted_emissions_trajectory = [global_emissions_trajectory[year] for year in sorted_years] 
+        
         # Plot the global emissions trajectory
-        ax.plot(sorted_years, sorted_emissions_trajectory, color = color, label = label)
+        ax.plot(sorted_years, sorted_emissions_trajectory, color=color, label=label)
         ax.set_xlabel('Year')
         ax.set_ylabel('Emissions (metric tonnes)')
         ax.margins(0)
-        #ax.set_ylim(bottom=0)
-        # draw a horizontal line at 0 emissions on the x axis
         ax.axhline(0, color='black', lw=1, alpha=0.5)
 
         # plot linear carbon budget pathway
         years_lin, emissions_lin = self.scenario.compute_linear_carbon_budget_pathway()
-        ax.plot(years_lin+2022, emissions_lin*1e9, color="tab:orange", label="Linear Budget") # convert from years to 2022 plus the years required and from gigatonnes to metric tonnes
+        ax.plot(years_lin+2022, emissions_lin*1e9, color="tab:orange", label="Linear Budget") 
         
-        # save the emissions in gigatonnes data to a csv file in the data folder with the name "global_emissions_trajectory.csv" with two columns "year" and "emissions"
-        emissions_data = pd.DataFrame({"year": sorted_years, "emissions": [e/1e9 for e in sorted_emissions_trajectory]}) # convert to gigatonnes
+        # save the emissions in gigatonnes data to a csv file 
+        emissions_data = pd.DataFrame({"year": sorted_years, "emissions": [e/1e9 for e in sorted_emissions_trajectory]}) 
         emissions_data.to_csv("data/global_emissions_trajectory.csv", index=False)
 
-        # plot exponential carbon budget pathway
-        #years_exp, emissions_exp = self.scenario.compute_exponential_carbon_budget_pathway()
-        #ax.plot(years_exp+2022, emissions_exp*1e9, color = "tab:red")
-        #ax.legend(['Global Emissions'], ['Linear Carbon Budget Pathway'], ['Exponential Carbon Budget Pathway'])
-
-
-        #plt.tight_layout()
-        #plt.show()
 
     def plot_global_population(self):
         """

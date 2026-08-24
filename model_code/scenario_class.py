@@ -50,8 +50,8 @@ class Scenario():
            # --- NEW ELASTICITY ASSUMPTIONS TO ADD ---
         # 1. Validates which elasticity logic to use (defaults to 'off' if you forget to include it in older scenario setups)
         self.elasticity_assumption = scenario_params.get("elasticity_assumption", "off")
-        if self.elasticity_assumption not in ["off", "constant", "income_dependent"]:
-            raise ValueError("elasticity_assumption must be one of ['off', 'constant', 'income_dependent']")
+        if self.elasticity_assumption not in ["off", "constant", "absolute_income_elasticity"]:
+            raise ValueError("elasticity_assumption must be one of ['off', 'constant', 'absolute_income_elasticity']")
             
         # 2. Extracts the numerical parameters (with safe fallbacks)
         self.elasticity_value = scenario_params.get("elasticity_value", 1.0)
@@ -74,7 +74,7 @@ class Scenario():
         self.steady_state_high_income_assumption = self.validate_assumption(scenario_params, "steady_state_high_income_assumption", ["on", "off", "on_with_growth"])
         self.population_hysteresis_assumption = self.validate_assumption(scenario_params, "population_hysteresis_assumption", ["on", "off"])
         self.cdr_assumption = self.validate_assumption(scenario_params, "cdr_assumption", ["on", "off"])
-        self.elasticity_assumption = self.validate_assumption(scenario_params, "elasticity_assumption", ["off", "constant", "income_dependent"])
+        self.elasticity_assumption = self.validate_assumption(scenario_params, "elasticity_assumption", ["off", "constant", "absolute_income_elasticity"])
 
 
         # Initialize global outcomes storage
@@ -764,6 +764,100 @@ class Scenario():
 
         # avoid division by zero
         return pop_below / total_pop if total_pop > 0 else 0.0
+
+
+    def verify_carbon_intensity_consistency(self):
+        """
+        Description:
+            A rigorous validation method ensuring that the emergent macro-level 
+            global carbon intensity exactly matches the bottom-up aggregation 
+            of all decile-specific emissions and GDP shares.
+        """
+        # Ensure there are countries to check
+        if not self.countries:
+            return True
+            
+        # Extract the simulated years from an arbitrary country instance
+        first_country = next(iter(self.countries.values()))
+        simulated_years = list(first_country.gdp_trajectory.keys())
+        
+        # Tolerance for floating-point arithmetic summation differences
+        tolerance = 1e-5
+        
+        for year in simulated_years:
+            macro_global_gdp = 0.0
+            macro_global_emissions = 0.0
+            
+            bottom_up_global_gdp = 0.0
+            bottom_up_global_emissions = 0.0
+            
+            for country in self.countries.values():
+                # ---------------------------------------------------------
+                # 1. Top-Down Macro Aggregates
+                # ---------------------------------------------------------
+                c_macro_gdp = country.gdp_trajectory[year]
+                c_macro_emissions = country.emissions_trajectory[year]
+                
+                macro_global_gdp += c_macro_gdp
+                macro_global_emissions += c_macro_emissions
+                
+                # ---------------------------------------------------------
+                # 2. Bottom-Up Decile Aggregates
+                # ---------------------------------------------------------
+                # Reconstruct the decile incomes and mean income for this year
+                decile_incomes = [country.decile_trajectories[f'decile{d}'][year] for d in range(1, 11)]
+                mean_income = sum(decile_incomes) / 10.0 if sum(decile_incomes) > 0 else 1.0
+                
+                c_bottom_up_gdp = 0.0
+                c_bottom_up_emissions = 0.0
+                
+                for d in range(1, 11):
+                    yd = decile_incomes[d-1]
+                    
+                    # Reconstruct the decile's GDP share mathematically
+                    gdp_d = c_macro_gdp * (yd / (10.0 * mean_income))
+                    c_bottom_up_gdp += gdp_d
+                    
+                    # Fetch the decile's recorded absolute emissions
+                    emissions_d = country.decile_emissions_trajectories[f'decile{d}'][year]
+                    c_bottom_up_emissions += emissions_d
+                
+                # ---------------------------------------------------------
+                # 3. Country-Level Assertions (Micro to Macro)
+                # ---------------------------------------------------------
+                assert abs(c_macro_gdp - c_bottom_up_gdp) < tolerance, \
+                    f"GDP mismatch in {country.code} for year {year}. Macro: {c_macro_gdp}, Deciles sum: {c_bottom_up_gdp}"
+                    
+                assert abs(c_macro_emissions - c_bottom_up_emissions) < tolerance, \
+                    f"Emissions mismatch in {country.code} for year {year}. Macro: {c_macro_emissions}, Deciles sum: {c_bottom_up_emissions}"
+                
+                bottom_up_global_gdp += c_bottom_up_gdp
+                bottom_up_global_emissions += c_bottom_up_emissions
+
+            # ---------------------------------------------------------
+            # 4. Global-Level Assertions (Country Macro to Global)
+            # ---------------------------------------------------------
+            assert abs(macro_global_gdp - bottom_up_global_gdp) < tolerance, \
+                f"Global GDP mismatch in year {year}! Macro: {macro_global_gdp}, Bottom-up: {bottom_up_global_gdp}"
+                
+            assert abs(macro_global_emissions - bottom_up_global_emissions) < tolerance, \
+                f"Global Emissions mismatch in year {year}! Macro: {macro_global_emissions}, Bottom-up: {bottom_up_global_emissions}"
+
+            # ---------------------------------------------------------
+            # 5. Final Carbon Intensity Assertion
+            # ---------------------------------------------------------
+            if macro_global_gdp > 0:
+                # Top-down CI as used in the plotting class
+                macro_global_ci = (macro_global_emissions * 1000) / macro_global_gdp
+                
+                # Emergent CI from the sum of decile-level economic outputs
+                bottom_up_global_ci = (bottom_up_global_emissions * 1000) / bottom_up_global_gdp
+                
+                assert abs(macro_global_ci - bottom_up_global_ci) < tolerance, \
+                    f"Global Carbon Intensity mismatch in year {year}! Plot CI: {macro_global_ci}, Bottom-up CI: {bottom_up_global_ci}"
+
+        print("Success: Bottom-up decile aggregations perfectly match the global macro carbon intensities.")
+        return True
           
     def run(self):
 
@@ -786,6 +880,10 @@ class Scenario():
                 # run the scenario over time
                 for year in range(self.start_year, self.end_year): # the scenario must run the change from 2022 to 2023 and as last step the change from endyear - 1 to endyear, it cannot run through endyear again
                         self.step()
+
+
+        # Run strict consistency validation after the simulation loop
+        # self.verify_carbon_intensity_consistency()
 
 
   

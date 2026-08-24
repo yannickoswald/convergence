@@ -238,7 +238,7 @@ class ScenarioSweeper:
         combined_cmap = combine_cmaps(cmap_below, cmap_above, 1, Z)
 
         contourf_kwargs = {
-            "levels": 200,  
+            "levels": np.linspace(np.min(Z), np.max(Z), 200),  
             "cmap": combined_cmap
         }
 
@@ -264,7 +264,7 @@ class ScenarioSweeper:
 
         contour_line_0 = ax.contour(X, Y, Z, levels=[1], colors='white', linestyles='dashed')
         
-        if ax_index != 5:     
+        if ax_index != 5:    
             pass 
         else:
             pass

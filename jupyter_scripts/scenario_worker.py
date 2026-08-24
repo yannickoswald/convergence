@@ -2,72 +2,71 @@ import copy
 import numpy as np
 from scenario_class import Scenario
 
-# Base parameters fallback. The 6 dynamic variables will be injected below.
+# We must put the base params here so the worker file knows about them
 base_scenario_params = {
     "end_year": 2100,
     "carbon_budget": 1150 * 0.95 - 2 * 35,
     "gdp_assumption": "constant_ratio",
     "pop_growth_assumption": "semi_log_model",
     "tech_evolution_assumption": "plausible",
+    "tech_hysteresis_assumption": "optimistic_degrowth",
     "steady_state_high_income_assumption": "off",
     "k": 0.05,
     "t0": 2060,
-    "population_hysteresis_assumption": "on",
+    "population_hysteresis_assumption": "on", # Updated based on recent script changes
     "run_until_2100": "on",
     "cdr_level_2100": 5,
+    # "elasticity_assumption" and "elasticity_value" are set dynamically below
 }
 
 def run_single_scenario_with_deciles(param_tuple):
     """
     Runs a single iteration of the scenario and returns the extracted trajectory rows.
     """
-    # 1. Unpack all 6 variables (Aligns perfectly with the itertools permutations)
+    # 1. Unpack 6 variables to include the elasticity assumption type
     inc, cdr, degrowth, fir, elast_assump, elast_val = param_tuple
-    
-    # 2. Inject parameters into the Scenario config
+
     params = copy.deepcopy(base_scenario_params)
     params["income_goal"] = inc
     params["cdr_assumption"] = cdr
     params["tech_hysteresis_assumption"] = degrowth 
     params["final_improvement_rate"] = fir
+
+    # 2. Map to the new elasticity parameter names
     params["elasticity_assumption"] = elast_assump
     params["elasticity_value"] = elast_val
 
-    # 3. Initialize and run Scenario
     scenario = Scenario(params)
-    scenario.compute_country_scenario_params() 
+    scenario.compute_country_scenario_params() # 3. CRITICAL: Required by new scenario architecture
     scenario.run()
-    
-    # 4. Extract data
+
     scenario_rows = []
+
     for country_name, country in scenario.countries.items():
         for year in country.gdp_trajectory.keys():
-            #if year > params["end_year"]:
-             #   continue
-            
-            # Fetch macro data
+            if year > params["end_year"]:
+                continue
+
             pop = country.population_trajectory.get(year, np.nan)
             gdp = country.gdp_trajectory.get(year, np.nan)
             gdppc = country.gdppc_trajectory.get(year, np.nan)
             tot_emissions = country.emissions_trajectory.get(year, np.nan)
             gini = country.gini_coefficient_trajectory.get(year, np.nan)
-            
-            # Fetch decile data
+
             for d in range(1, 11):
                 d_key = f'decile{d}'
-                
+
                 decile_income = country.decile_trajectories.get(d_key, {}).get(year, np.nan)
                 decile_emissions_pc = country.decile_emissions_trajectories_pc.get(d_key, {}).get(year, np.nan)
                 decile_absolute_emissions = country.decile_emissions_trajectories.get(d_key, {}).get(year, np.nan)
-                
-                # Build row
+
                 row = {
                     "Income_Goal": inc,
                     "CDR_Assumption": cdr,
                     "Degrowth_Assumption": degrowth, 
                     "Final_Improvement_Rate": fir,
                     "Elasticity_Assumption": elast_assump,
-                    "Elasticity": elast_val,
+                    "Elasticity": elast_val, # Kept as 'Elasticity' to avoid breaking your plot code
                     "Country": country_name,
                     "Country_Code": getattr(country, 'code', 'UNKNOWN'),
                     "Year": year,
@@ -82,5 +81,5 @@ def run_single_scenario_with_deciles(param_tuple):
                     "Gini": gini
                 }
                 scenario_rows.append(row)
-                
+
     return scenario_rows

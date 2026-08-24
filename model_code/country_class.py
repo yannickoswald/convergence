@@ -216,131 +216,74 @@ class Country():
 
                 # DIFFERENTIATE TECHNOLOGICAL CHANGE ASSUMPTIONS
                 #################################################
-                #if self.scenario.tech_evolution_assumption == "plausible":
-                # for the first ten years assume the ongoing trend in carbon intensity from 2010 to 2020
+                # 1. Determine the uniform improvement rate for this year
+                improvement_rate = 0.0
+                
                 if self.year < 2021:
-                        self.carbon_intensity = self.carbon_intensity * (1 + self.carbon_intensity_trend)
-                # after that assume a constant the logarithmic model empirically determined via cross country data gdppc 2022 vs trend 2010 2020
-                # which is this equation y = -0.015ln(x) + 0.1309 where x is the gdp per capita in 2022 and y is the trend in carbon intensity from 2010 to 2020
+                        improvement_rate = self.carbon_intensity_trend
                 else:   
-                        # distinguish between the two cases of country that grows or degrows its average gdp per capita and hence introduce hysteresis in the technological change
                         if self.scenario.tech_hysteresis_assumption == "optimistic_degrowth":
-
                                 if self.cagr_average > 0:
-
-                                        # if economic growth is positive then we apply the modelled trend and sigmoidal average 
-                                        #  this assumption ensure that growing economies make advances in decarbonization
-
                                         modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
-                                        z = self.scenario.final_improvement_rate ## this is a constant  uniform value for the carbon intensity decline that the world adopts slowly and then rapidly.
-                                        k = self.scenario.k # this is the steepness of the sigmoidal function
-                                        t0 = self.scenario.t0 # this is the midpoint of the sigmoidal function
-                                        weighted_model = weighted_average(self.year, modelled_trend, z,  k=k, t0=t0)
-                                        self.carbon_intensity = self.carbon_intensity * (1 + weighted_model)
+                                        improvement_rate = weighted_average(self.year, modelled_trend, self.scenario.final_improvement_rate, k=self.scenario.k, t0=self.scenario.t0)
                                 else:
-                                        # if the country is in a planned degrowth scenario then assume the fixed progress in technology i.e. -1% per year already from the start
-                                        #assume progress in technology under planned degrowth i.e. -1% per year
-                                        self.carbon_intensity = self.carbon_intensity * (1 + self.scenario.final_improvement_rate) # CAREFUL RATE GIVEN IS NEGATIVE so + operator leads to multiplier < 1
+                                        improvement_rate = self.scenario.final_improvement_rate 
 
+                        ### OLD         
+                        #elif self.scenario.tech_hysteresis_assumption == "pessimistic_degrowth":
+                         #       if self.cagr_average > 0:
+                          #              modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
+                           #             improvement_rate = weighted_average(self.year, modelled_trend, self.scenario.final_improvement_rate, k=self.scenario.k, t0=self.scenario.t0)
+                            #    else:
+                             #           improvement_rate = 0 
 
                         elif self.scenario.tech_hysteresis_assumption == "pessimistic_degrowth":
-
-                                if self.cagr_average > 0:
-
-                                        # if economic growth is positive then we apply the modelled trend and sigmoidal average 
-                                        #  this assumption ensure that growing economies make advances in decarbonization
-
-                                        modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
-                                        z = self.scenario.final_improvement_rate ## this is a constant  uniform value for the carbon intensity decline that the world adopts slowly and then rapidly.
-                                        k = self.scenario.k # this is the steepness of the sigmoidal function
-                                        t0 = self.scenario.t0 # this is the midpoint of the sigmoidal function
-                                        weighted_model = weighted_average(self.year, modelled_trend, z,  k=k, t0=t0)
-                                        self.carbon_intensity = self.carbon_intensity * (1 + weighted_model)
-                                else:
-                                        # if the country is in a planned degrowth scenario then assume the fixed progress in technology i.e. -1% per year already from the start
-                                        #assume progress in technology under planned degrowth i.e. -1% per year
-                                        #self.carbon_intensity = self.carbon_intensity * (1 + self.scenario.final_improvement_rate) # CAREFUL RATE GIVEN IS NEGATIVE so + operator leads to multiplier < 1
-                                        # IMPORTANT we now weaken this assumption and just keep the carbon intensity constant in the case of degrowth because it is not clear that planned degrowth economies would also revert socio-cultural norms to lower technological progress and innovation rates, so we assume preservation of the technology
-                                        # print this is country and this is the cagr average and this is the carbon intensity
-                                         #print(f"This is country {self.code}, this is the CAGR average: {self.cagr_average}, and this is the carbon intensity: {self.carbon_intensity}")
-                                        self.carbon_intensity = self.carbon_intensity # do nothing
-
-                        elif self.scenario.tech_hysteresis_assumption == "off":
-                        
-                                # # #  all countries are treated according to the same mechanics regardless of income trajectory 
-   
+                                ### just countries evolve according to the semi log model of technological change, so path dependency is not considered, but the semi log model is applied to all countries, so the technological change rate is always the same for all countries and only depends on the gdp per capita of the country
                                 modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
-                                z = self.scenario.final_improvement_rate ## this is a constant  uniform value for the carbon intensity decline that the world adopts slowly and then rapidly.
-                                k = self.scenario.k # this is the steepness of the sigmoidal function
-                                t0 = self.scenario.t0 # this is the midpoint of the sigmoidal function
-                                weighted_model = weighted_average(self.year, modelled_trend, z,  k=k, t0=t0)
-                                self.carbon_intensity = self.carbon_intensity * (1 + weighted_model)
-                        
-                #elif self.scenario.tech_evolution_assumption == "necessary":
-                        # generally here we will calculate the necessary carbon intensity reduction rate to stay within the country specific allocated carbon budget
-                        # store the variable self.diff_budget_and_emissions_percentage in a local variable
-                        #self.calculate_diff_budget_and_emissions() ## execute the method to calculate the difference between the carbon budget and the emissions of the country in the current year
-                        ###################################################################################
-                        ######## USE A simple IPAT framework to calculate the new carbon intensity ########
-                        ###################################################################################
-                        # the IPAT framework is I = P * A * T where I is the impact, P is the population, A is the affluence and T is the technology
-                        # we want to calculate the new technology T to stay within the carbon budget
-                        # we assume the population stays constant and the affluence stays constant so we only need to calculate the new technology
-                        # we just must rearrange the formula to T = I_new / (P * A) and use the new I which is the carbon budget adjusted for the self.diff_budget_and_emissions_percentage
+                                improvement_rate = weighted_average(self.year, modelled_trend, self.scenario.final_improvement_rate, k=self.scenario.k, t0=self.scenario.t0)
+                
+                # 2. Apply the rate to the country's macro carbon intensity
+                self.carbon_intensity = self.carbon_intensity * (1 + improvement_rate)
+                
+                # 3. CLEAR UNIFORM EVOLUTION: Apply the exact same rate to every decile's carbon intensity
+                assumption = getattr(self.scenario, 'elasticity_assumption', 'off')
+                if assumption in ["constant", "income_dependent"]:
+                        # Ensure the dictionary isn't empty before trying to evolve it
+                        if self.decile_carbon_intensities:
+                                for d in range(1, 11):
+                                        self.decile_carbon_intensities[f'decile{d}'] *= (1 + improvement_rate)
 
-                        # check though first whether the country is already within its carbon budget, a ratio of 1 or less means it is within the budget
-                        #if self.diff_budget_and_emissions_ratio < 1:
-                         #        modelled_trend = -0.015 * np.log(self.gdp_pc) + 0.1309
-                          #       self.carbon_intensity = self.carbon_intensity * (1 + modelled_trend)
-                       #else:
-                                # if the country is not within its carbon budget then we calculate the new carbon intensity
-                                # one must take the inverse of the ratio to get the necessary reduction in emissions to stay within the budget i.e. 1/self.diff_budget_and_emissions_ratio
-                        #        if self.code == "USA":
-                          #              print("this is the inverse ratio", 1/self.diff_budget_and_emissions_ratio)
-                         #               print("this is the carbon intensity calculated from the IPAT framework of",self.code," ", (self.total_emissions * (1/self.diff_budget_and_emissions_ratio)) / (self.gdp_pc * self.population)*1000)
-                           #     self.carbon_intensity = (self.total_emissions * (1/self.diff_budget_and_emissions_ratio)) / (self.gdp_pc * self.population) * 1000 # this is the emissions of the country, multiplied by 1000 to get to kg co2 per $ from metric tons co2 per $
-                        
 
+                # PATH B: The New Absolute Elasticity Method
+                elif assumption == "absolute_income_elasticity":
+                        if getattr(self, 'current_A', None) is not None:
+                                self.current_A *= (1 + improvement_rate)
 
 
         def update_emissions(self):
+
                 """
                 Description: 
                         A method computing the emissions of the country by summing the 
-                        heterogeneous emissions of each decile based on elasticity or if a unitary elasticity is assumed, then 
-                        based on the average carbon intensity.
+                        heterogeneous emissions of each decile based on absolute elasticity.
                 """
+
                 assumption = getattr(self.scenario, 'elasticity_assumption', 'off')
 
-
-                # --- ADD ASSERT STATEMENTS HERE ---
-                # 1. Check that the assumption path is strictly one of your allowed interface values
-                valid_assumptions = ["off", "constant", "income_dependent"]
+                valid_assumptions = ["off", "constant", "absolute_income_elasticity"]
                 assert assumption in valid_assumptions, f"Path Error: Unrecognized elasticity assumption '{assumption}'."
-
-                # 2. Check that the scenario object is properly attached and holding the interface parameters
                 assert hasattr(self.scenario, 'income_goal'), "Path Error: 'income_goal' parameter did not pass from the interface to the scenario."
-                
-                # 3. (Optional) Check that elasticity_value is present if the assumption is active
                 if assumption != "off":
                         assert hasattr(self.scenario, 'elasticity_value'), "Path Error: 'elasticity_value' missing but assumption is turned on."
-                # ----------------------------------
                 
-                # Re-initialize cross-sectional distribution array for the current year
                 self.decile_emissions_pc_dist = []
-                pop_d = self.population / 10 # population per decile
+                pop_d = self.population / 10.0 # population per decile
                 macro_gdp = self.gdp_pc * self.population
-                
-                # BUG FIX: Calculate true mean directly from the deciles. 
-                # This guarantees yd and mean_income are always in identical units (Annual), 
-                # preventing the 365x multiplier bug in the base year 2022.
                 decile_incomes = [getattr(self, f'decile{d}_abs') for d in range(1, 11)]
                 mean_income = sum(decile_incomes) / 10.0 if sum(decile_incomes) > 0 else 1.0
                 
-                total_scaled_emissions = 0
-                
                 if assumption == "off":
-                        self.total_emissions = self.carbon_intensity * self.gdp_pc * self.population / 1000 
+                        self.total_emissions = self.carbon_intensity * macro_gdp / 1000 
                         
                         for d in range(1, 11):
                                 yd = getattr(self, f'decile{d}_abs')
@@ -348,32 +291,83 @@ class Country():
                                 emissions_d = (self.carbon_intensity * gdp_d) / 1000
                                 emissions_d_pc = emissions_d / pop_d if pop_d > 0 else 0
                                 
-                                # 1. Keep snapshot distribution
                                 self.decile_emissions_pc_dist.append(emissions_d_pc)
-                                
-                                # 2. Set object attributes so save_current_state can find them
                                 setattr(self, f'decile{d}_emissions', emissions_d)
                                 setattr(self, f'decile{d}_emissions_pc', emissions_d_pc)
                                 
                 elif assumption in ["constant", "income_dependent"]:
-                        # Both modes rely on decile-specific carbon intensities
-                        self.update_decile_carbon_intensities()
                         
-                        for d in range(1, 11):
-                                yd = getattr(self, f'decile{d}_abs')
-                                ci_d = self.decile_carbon_intensities[f'decile{d}']
+                        # --- CLEAR BASE YEAR CALIBRATION ---
+                        # We do this math ONLY ONCE during __init__ to lock in the starting carbon intensities.
+                        if not self.decile_carbon_intensities:
+                                epsilon = self.get_current_elasticity()
+                                total_e_2022 = (self.carbon_intensity * macro_gdp) / 1000
                                 
+                                # Absolute elasticity formula: Emissions = Pop_d * A * Y_d^epsilon
+                                sum_y_eps = sum(yd ** epsilon for yd in decile_incomes)
+                                
+                                # Find the structural scalar 'A' for the base year
+                                base_A = total_e_2022 / (pop_d * sum_y_eps) if sum_y_eps > 0 else 0
+                                
+                                # Calculate and store the EXACT starting carbon intensity (kg/$PPP) for each decile
+                                for i, yd in enumerate(decile_incomes):
+                                        d = i + 1
+                                        e_d = pop_d * base_A * (yd ** epsilon) # Absolute emissions in tonnes
+                                        gdp_d = macro_gdp * (yd / (10 * mean_income))
+                                        
+                                        # Convert back to kg per dollar to store as the decile's Carbon Intensity
+                                        ci_d = (e_d * 1000) / gdp_d if gdp_d > 0 else 0 
+                                        self.decile_carbon_intensities[f'decile{d}'] = ci_d
+
+                        # --- CALCULATE EMISSIONS FOR CURRENT YEAR ---
+                        total_scaled_emissions = 0
+                        
+                        for i, yd in enumerate(decile_incomes):
+                                d = i + 1
                                 gdp_d = macro_gdp * (yd / (10 * mean_income))
+                                
+                                # Simply multiply the decile's GDP by its specific, evolved Carbon Intensity
+                                ci_d = self.decile_carbon_intensities[f'decile{d}']
                                 emissions_d = (ci_d * gdp_d) / 1000
                                 emissions_d_pc = emissions_d / pop_d if pop_d > 0 else 0
                                 
-                                # 1. Keep snapshot distribution
                                 self.decile_emissions_pc_dist.append(emissions_d_pc)
-                                
-                                # 2. Set object attributes so save_current_state can find them
                                 setattr(self, f'decile{d}_emissions', emissions_d)
                                 setattr(self, f'decile{d}_emissions_pc', emissions_d_pc)
                                 
+                                total_scaled_emissions += emissions_d
+                                
+                        self.total_emissions = total_scaled_emissions
+
+                # ---------------------------------------------------------
+                # PATH 3: The New Absolute Income Elasticity
+                # ---------------------------------------------------------
+                elif assumption == "absolute_income_elasticity":
+                        epsilon = self.get_current_elasticity()
+                        
+                        # Calibrate the base year once to find the structural scalar
+                        if getattr(self, 'current_A', None) is None:
+                                total_e_2022 = (self.carbon_intensity * macro_gdp) / 1000
+                                sum_y_eps = sum(yd ** epsilon for yd in decile_incomes)
+                                self.current_A = total_e_2022 / (pop_d * sum_y_eps) if sum_y_eps > 0 else 0
+
+                        # ---> THIS IS THE FIX: Initialize the counter to 0 <---
+                        total_scaled_emissions = 0
+
+                        # Calculate current year emissions
+                        for i, yd in enumerate(decile_incomes):
+                                d = i + 1
+                                emissions_d = pop_d * self.current_A * (yd ** epsilon)
+                                emissions_d_pc = emissions_d / pop_d if pop_d > 0 else 0
+                                
+                                # Back-calculate the apparent Carbon Intensity for plotting compatibility
+                                gdp_d = macro_gdp * (yd / (10 * mean_income))
+                                self.decile_carbon_intensities[f'decile{d}'] = (emissions_d * 1000) / gdp_d if gdp_d > 0 else 0
+
+                                
+                                self.decile_emissions_pc_dist.append(emissions_d_pc)
+                                setattr(self, f'decile{d}_emissions', emissions_d)
+                                setattr(self, f'decile{d}_emissions_pc', emissions_d_pc)
                                 total_scaled_emissions += emissions_d
                                 
                         self.total_emissions = total_scaled_emissions
@@ -516,14 +510,14 @@ class Country():
                         self.gdp_pc =  self.hh_mean / self.gdp_hh_income_ratio                   
                   
                 elif self.scenario.gdp_assumption == "model_ratio":
-                        # the gdp ratio is conditional on the mean household income see script first data explorations
-                        if self.hh_mean < 5000: # use piecewise linear fits from first data explorations for this, so yearly cons. exp/disposable income vs. gdp to mean household income ratio
+                        # We use the exact intersection point of Fit 1 (-0.0000571x + 0.67) and y=0.40 to ensure continuity
+                        if self.hh_mean < 4728.55: 
                                 self.gdp_hh_income_ratio = -0.0000571 * (self.hh_mean) + 0.67
-                                #print("this is gdp_hh_income_ratio", self.gdp_hh_income_ratio)
-                                self.gdp_pc =  self.hh_mean / self.gdp_hh_income_ratio 
                         else:
-                                self.gdp_hh_income_ratio = 0.000002 * (self.hh_mean) + 0.39
-                                self.gdp_pc = self.hh_mean  / self.gdp_hh_income_ratio # this is the ratio of gdp to mean household income for countries with mean household income > 10000 which seems to be a reasonable assumption according to the cross sectional country data 
+                                self.gdp_hh_income_ratio = 0.40 # Constant structural scalar for high-income nations
+                        
+                        # Apply the ratio to calculate the GDPpc linearly without the asymptotic cap
+                        self.gdp_pc = self.hh_mean  / self.gdp_hh_income_ratio
 
 
         def population_growth(self):
@@ -691,52 +685,12 @@ class Country():
 
                 assumption = getattr(self.scenario, 'elasticity_assumption', 'off')
                 
-                if assumption == "constant":
+                # --- FIX: Added 'absolute_income_elasticity' here so it fetches the real value ---
+                if assumption in ["constant", "absolute_income_elasticity"]:
                         return getattr(self.scenario, 'elasticity_value', 1.0)
-                elif assumption == "income_dependent":
-                        # Get bounds from scenario or use defaults
-                        e_min = getattr(self.scenario, 'elasticity_min', 0.5)
-                        e_max = getattr(self.scenario, 'elasticity_max', 1.5)
-                        
-                        # Calculate elasticity based on GDPpc
-                        # This formula maps: 
-                        # 1k GDPpc -> e_max
-                        # 100k GDPpc -> e_max - (e_max - e_min) * 0.4 roughly
-                        elasticity = e_max - 0.2 * np.log10(max(1, self.gdp_pc / 1000))
-                        
-                        return max(e_min, min(e_max, elasticity))
                 else:
                         return 1.0
-
-        def update_decile_carbon_intensities(self):
-                """
-                Description:
-                        Splits the macro carbon intensity into heterogeneous decile intensities via the elasticity of emissions with respect to income.
-                """
-                epsilon = self.get_current_elasticity()
-                decile_incomes = [getattr(self, f'decile{d}_abs') for d in range(1, 11)]
-                
-                # BUG FIX: Calculate true mean directly from deciles to avoid daily vs annual unit mismatch
-                mean_income = sum(decile_incomes) / 10.0 if sum(decile_incomes) > 0 else 1.0
-                
-                # Calculate the denominator for the normalization factor
-                sum_ratios_eps = sum((yd / mean_income) ** epsilon for yd in decile_incomes)
-                
-                if self.year == 2022:
-                        # Calibrate base_A so sum of decile emissions exactly equals macro emissions in 2022
-                        self.base_A = (10 * self.carbon_intensity) / sum_ratios_eps if sum_ratios_eps > 0 else self.carbon_intensity
-
-                # Scale current A by how much macro carbon_intensity has improved since 2022
-                current_A = self.base_A * (self.carbon_intensity / self.base_carbon_intensity)
-                
-                # Generate the heterogeneous decile carbon intensities
-                for i, yd in enumerate(decile_incomes):
-                        d = i + 1
-                        ratio = yd / mean_income
-                        ci_d = current_A * (ratio ** (epsilon - 1)) if ratio > 0 else 0
-                        self.decile_carbon_intensities[f'decile{d}'] = ci_d
-
-                        
+             
 
         def __repr__(self): # This is the string representation of the object
                 # Retrieve the dynamic attributes by removing the 'country_' prefix and format them.
