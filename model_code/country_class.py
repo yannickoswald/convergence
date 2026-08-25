@@ -27,7 +27,7 @@ class Country():
                 decile8_abs                 - absolute value for the eighth decile (mapped from 'decile8_abs')
                 decile9_abs                 - absolute value for the ninth decile (mapped from 'decile9_abs')
                 decile10_abs                - absolute value for the tenth decile (mapped from 'decile10_abs')
-                gdp_hh_income_ratio         - ratio of GDP to mean household income (mapped from 'gdp_to_mean_hh_income_ratio')
+                hh_income_to_gdp_ratio      - ratio of mean household income to GDP (mapped from 'hh_income_to_gdp_ratio')
                 total_emissions             - emissions of the country (mapped from 'emissions') per year total
 
         """
@@ -94,7 +94,7 @@ class Country():
                         'decile8_abs': 'decile8_abs',
                         'decile9_abs': 'decile9_abs',
                         'decile10_abs': 'decile10_abs',
-                        'gdp_to_mean_hh_income_ratio': 'gdp_hh_income_ratio',
+                        'gdp_to_mean_hh_income_ratio': 'hh_income_to_gdp_ratio',
                         'population': 'population',
                         'total_emissions': 'total_emissions',
                         'growth_trend_2012_to_2022': 'gdp_pc_historical_growth'
@@ -507,17 +507,17 @@ class Country():
                 #################################################
                 if self.scenario.gdp_assumption == "constant_ratio":
                         ## just apply the empirically found ratio of gdp to mean household income
-                        self.gdp_pc =  self.hh_mean / self.gdp_hh_income_ratio                   
+                        self.gdp_pc =  self.hh_mean / self.hh_income_to_gdp_ratio                   
                   
                 elif self.scenario.gdp_assumption == "model_ratio":
                         # We use the exact intersection point of Fit 1 (-0.0000571x + 0.67) and y=0.40 to ensure continuity
                         if self.hh_mean < 4728.55: 
-                                self.gdp_hh_income_ratio = -0.0000571 * (self.hh_mean) + 0.67
+                                self.hh_income_to_gdp_ratio = -0.0000571 * (self.hh_mean) + 0.67
                         else:
-                                self.gdp_hh_income_ratio = 0.40 # Constant structural scalar for high-income nations
+                                self.hh_income_to_gdp_ratio = 0.40 # Constant structural scalar for high-income nations
                         
                         # Apply the ratio to calculate the GDPpc linearly without the asymptotic cap
-                        self.gdp_pc = self.hh_mean  / self.gdp_hh_income_ratio
+                        self.gdp_pc = self.hh_mean  / self.hh_income_to_gdp_ratio
 
 
         def population_growth(self):
