@@ -53,17 +53,18 @@ It is recommended to use a virtual environment. Install the required packages vi
     jupyter lab
     Navigate to jupyter_scripts/ within the interface and execute the desired notebook to reproduce the corresponding figure.
 
-Reporting Issues
+**Reporting Issues**
+
 If you encounter any issues reproducing the results or have questions regarding the methodology:
 
-Navigate to the repository's Issues page.
+**Navigate to the repository's Issues page.**
 
 Click New Issue.
 
 Provide a descriptive title and detailed information regarding the error or question.
 
-License
+**License**
 This project is licensed under the MIT License - see the LICENSE.txt file for details.
 
-Contact
+**Contact**
 For further academic inquiries, please contact: y-oswald@web.de
