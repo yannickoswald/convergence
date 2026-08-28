@@ -36,7 +36,7 @@ class Scenario():
                 Scenario parameters
         """
         # Set the key scenario parameters
-        self.start_year = 2022  # Assuming the scenario starts in 2023 (2022 is the last year of the data)
+        self.start_year = 2022  # Assuming the scenario starts in 2023 (2022 is the last year of the data but emission accounting starts from 2022)
         self.end_year = scenario_params["end_year"]
         self.income_goal = scenario_params["income_goal"]
         self.carbon_budget = scenario_params["carbon_budget"]
@@ -192,7 +192,7 @@ class Scenario():
                 None
         """
 
-        start_year = self.start_year  # Assuming the scenario starts in 2023
+        start_year = self.start_year  
         years_to_end = self.end_year - start_year
 
         for country in self.countries.values():
@@ -231,7 +231,7 @@ class Scenario():
               
                 for country in self.countries.values():
                         # Compute the CAGR for the average income
-                        average_income = country.hh_mean *365 # convert to annual household disposable income
+                        average_income = country.hh_mean # convert to annual household disposable income
 
                         # Compute CAGR
                         if average_income > 0 and years_to_end > 0:
@@ -255,7 +255,7 @@ class Scenario():
             global_hh_income_total = 0
             global_population = 0
             for country in self.countries.values():
-                global_hh_income_total += country.hh_mean * country.population * 365 # convert to annual household disposable income
+                global_hh_income_total += country.hh_mean * country.population # convert to annual household disposable income
                 global_population += country.population
       
             return global_hh_income_total / global_population
@@ -399,9 +399,9 @@ class Scenario():
                 Description: 
                         Sum the cumulative emissions for all countries over time in a given scenario. 
                         Which matters for exact numerics related to carbon budget shares used.
-                        By default, it starts counting from 2023 to match your updated baseline pipeline.
-                        To reproduce older results where 2022 was included, simply pass 
-                        accounting_start_year=2022 when calling this method, or change the default here.
+                        By default, it starts counting from 2022 to match your updated baseline pipeline.
+                        To reproduce older results where 2023 was included, simply pass 
+                        accounting_start_year=2023 when calling this method, or change the default here.
                 Parameters:
                         accounting_start_year - The year to start summing emissions from.
                 """

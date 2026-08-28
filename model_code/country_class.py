@@ -112,11 +112,16 @@ class Country():
                         if key not in attribute_mapping:
                                 setattr(self, f'country_{key}', value)
 
+                # PERMANENT FIX: Annualize daily hh_mean immediately upon load
+                self.hh_mean = self.hh_mean * 365
+
                 # =========================================================
                 # 4. PRE-CALCULATION SETUP & ELASTICITY INITIALIZATION
                 # =========================================================
                 # Set initial 2022 values before calculations
-                self.income_hh_trajectory[self.year] = self.hh_mean * 365 
+                # print the self.hh_mean to check whether daily 
+                print()
+                self.income_hh_trajectory[self.year] = self.hh_mean
                 self.gdppc_trajectory[self.year] = self.gdp_pc 
                 self.population_trajectory[self.year] = self.population 
                 self.carbon_intensity_trajectory[self.year] = self.carbon_intensity 
