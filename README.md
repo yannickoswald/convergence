@@ -1,96 +1,69 @@
-# Global convergence of incomes in a climate-constrained world
+# Global Convergence of Incomes in a Climate-Constrained World
 
 ## Repository Overview
 
-This repository stores all code related to the paper **Oswald & Millward-Hopkins, 2025, The Carbon Emissions of Global Income Convergence Scenarios** https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5333077 (in preparation/review).
+This repository contains the data, model code, and execution scripts for the paper:
+**Oswald & Millward-Hopkins, 2025, The Carbon Emissions of Global Income Convergence Scenarios**  
+[Read the pre-print on SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5333077) *(in preparation/review)*.
 
-All relevant output figures for this paper are produced in Jupyter notebooks. These notebooks employ the classes that represent the actual model, which are Python files.
+The project utilizes a custom Python-based model to evaluate the trade-offs and carbon budget transgressions associated with global income convergence. All output figures are fully reproducible via the provided Jupyter notebooks.
 
-### Model Python Files
+## Repository Structure
 
-1. **country_class.py** - Defines the country-specific attributes and behaviors.
-2. **scenario_class.py** - Handles the different scenarios for income convergence modeling.
+The repository is modularized into three main directories to separate raw inputs, model architecture, and executable scripts:
 
-### Supporting Modeling Files for Plots
-
-1. **scenariosweeper_class.py** - Necessary for 2-D trade-offs plots.
-2. **plots_class.py** - Contains methods for generating various plots.
-
-
-### Notebooks for Figure Outputs
-
-1. **first_data_explorations.ipynb** - Initial data checks and analysis, includes FIGURE 1.
-2. **run_figure2.ipynb** - Generates FIGURE 2.
-3. **run_figure3.ipynb** - Generates FIGURE 3.
-4. **run_figure4.ipynb** - Generates FIGURE 4.
-5. **run_figure5.ipynb** - Generates FIGURE 5.
-6. **run_country_specifics** Figures not included in paper or supplementary material but of relevance for country-specific analysis.
-
-### Pre-Modelling Data Processing Notebooks
-
-1. **clean_extend_pip_data.ipynb** - Processes and extends initial data for modeling.
-
-### Data files
-
-All necessary data files that are processed by the notebooks and model are in the folder data. There is only freely available data from the World Bank, the UN and processed data from IIASA SSP explorer. Please get in touch in case of issues loading the data or conflict of storing the data here.
-
-#### The original references are 
-
-    1. https://pip.worldbank.org/ (originally downloaded dataset included)
-    2. https://tntcat.iiasa.ac.at/SspDb/dsd?Action=htmlpage&page=welcome (originally downloaded dataset NOT included)
-    3. https://population.un.org/wpp/ (originally downloaded dataset included)
+*   `data/`
+    Contains all necessary empirical datasets processed by the model. The raw sources include freely available data from the World Bank, the UN, and processed data from the IIASA SSP explorer.
+    *   *References:* [World Bank PIP](https://pip.worldbank.org/), [IIASA SSP Database](https://tntcat.iiasa.ac.at/SspDb/), [UN World Population Prospects](https://population.un.org/wpp/).
+*   `model_code/`
+    Contains the core Python classes that define the simulation logic.
+    *   `country_class.py`: Defines country-specific attributes, emission trajectories, and growth behaviors.
+    *   `scenario_class.py`: Handles global scenarios, parameter sweeps, and convergence logic.
+    *   `scenariosweeper_class.py`: Facilitates multi-parameter trade-off analysis.
+    *   `plots_class.py`: Contains custom methods for generating the paper's figures.
+*   `jupyter_scripts/`
+    Contains the sequential notebooks used to process data, explore baselines, and generate the final publication figures.
+    *   `clean_extend_pip_data.ipynb`: Pre-processing of the initial datasets.
+    *   `first_data_explorations.ipynb`: Initial data checks and generation of **Figure 1**.
+    *   `run_figure2.ipynb` to `run_figure5.ipynb`: Scripts executing the model to generate **Figures 2 through 5**.
+    *   `run_country_specifics.ipynb`: Supplementary country-level analysis not featured in the main text.
 
 ## Getting Started
 
-To get started with the code, ensure you have the necessary dependencies installed. You can set up your environment using the provided `requirements.txt` file.
-
-```sh
-pip install -r requirements.txt
-```
-
-## Usage
-
-Each Jupyter notebook is designed to be run independently. Ensure you have the model Python files in the same directory as the notebooks to avoid import errors. As well as the required data files.
+To replicate the findings, clone this repository and set up a virtual environment with the required dependencies.
 
 1. **Clone the repository:**
+   ```sh
+   git clone [https://github.com/yannickoswald/global-convergence-incomes.git](https://github.com/yannickoswald/global-convergence-incomes.git)
+   cd global-convergence-incomes
 
-    ```sh
-    git clone https://github.com/yannickoswald/global-convergence-incomes.git
-    ```
 
-2. **Navigate to the repository:**
+2. **Install dependencies:**
+It is recommended to use a virtual environment. Install the required packages via:
 
-    ```sh
-    cd global-convergence-incomes
-    ```
+    Bash
+    pip install -r requirements.txt
 
-3. **Run the notebooks:**
+    Usage
+    Each Jupyter notebook in the jupyter_scripts/ directory is designed to be run independently. The notebooks are configured to automatically locate the model architecture in the model_code/ directory, so no files need to be moved.
 
-    Open any of the Jupyter notebooks using Jupyter Lab or Jupyter Notebook interface.
+3. **Launch the Jupyter environment from the root of the repository:**
 
-    ```sh
+    Bash
     jupyter lab
-    ```
+    Navigate to jupyter_scripts/ within the interface and execute the desired notebook to reproduce the corresponding figure.
 
-    or
+Reporting Issues
+If you encounter any issues reproducing the results or have questions regarding the methodology:
 
-    ```sh
-    jupyter notebook
-    ```
+Navigate to the repository's Issues page.
 
-**Reporting Issues**
+Click New Issue.
 
-If you encounter any issues or have suggestions for improvements, please raise an issue on GitHub. To do so, follow these steps:
+Provide a descriptive title and detailed information regarding the error or question.
 
-1. Go to the repository's Issues page.
-2. Click on the "New Issue" button.
-3. Provide a descriptive title and detailed information about the issue.
-4. Click "Submit new issue" to create the issue.
+License
+This project is licensed under the MIT License - see the LICENSE.txt file for details.
 
-**License**
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-**Contact**
-
-y-oswald@web.de
+Contact
+For further academic inquiries, please contact: y-oswald@web.de
